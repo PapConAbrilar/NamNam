@@ -93,11 +93,11 @@ El flujo de la aplicación se organiza en las siguientes etapas:
 1. **Componentes Standalone:** En Angular moderno, no utilizar `NgModule` a menos que sea estrictamente necesario. Importar los módulos de Ionic (`IonContent`, `IonHeader`, etc.) directamente en los imports del componente.
 2. **Servicios desacoplados:** La lógica de negocio, llamadas a APIs (Gemini, Supabase) y almacenamiento debe residir en servicios (`services/`), no dentro de los componentes/páginas.
 3. **Tipado estricto:** Usar interfaces y modelos de TypeScript (`models/`) para alimentos, comidas, usuarios, metas y coleccionables.
-4. **Actualización continua de este archivo:** Cada vez que se desarrolle o modifique una funcionalidad relevante, **se debe documentar en la Sección 5** de este archivo.
+4. **Actualización continua de este archivo:** Cada vez que se desarrolle o modifique una funcionalidad relevante, **se debe documentar en la Sección 6** de este archivo.
 
 ---
 
-## � 5. Flujo de Trabajo en Git y GitHub (Git Flow)
+## 🔁 5. Flujo de Trabajo en Git y GitHub (Git Flow)
 
 Para mantener el orden, la trazabilidad del código y evitar conflictos entre los integrantes del equipo o agentes de IA, se establece el siguiente flujo obligatorio:
 
@@ -174,7 +174,7 @@ Para mantener el orden, la trazabilidad del código y evitar conflictos entre lo
     * `.gitignore`: Adición de `/mockup` para no incluir artefactos de Figma/código de prueba en el control de versiones.
 
 #### 2. Pantalla de Bienvenida / Login y Redirección por Defecto
-* **Estado:** � Completada (Validada por Benjamín Pinto)
+* **Estado:** 🟢 Completada (Validada por Benjamín Pinto)
 * **Fecha:** 2026-09-22
 * **Autor / Responsable:** Antigravity AI & Benjamín Pinto
 * **¿Qué hace?**:
