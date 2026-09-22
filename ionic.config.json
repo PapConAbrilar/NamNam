@@ -1,0 +1,7 @@
+{
+  "name": "NamNam",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}
