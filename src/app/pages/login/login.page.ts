@@ -74,7 +74,11 @@ export class LoginPage {
 
         if (res.success && res.user) {
           await this.showToast(`¡Hola de nuevo, ${res.user.name}! 🥑`, 'success');
-          this.router.navigate(['/tabs']);
+          if (res.user.hasCompletedOnboarding) {
+            this.router.navigate(['/tabs']);
+          } else {
+            this.router.navigate(['/onboarding']);
+          }
         } else {
           await this.showToast(res.message || 'Error al iniciar sesión', 'danger');
         }
@@ -85,7 +89,7 @@ export class LoginPage {
 
         if (res.success && res.user) {
           await this.showToast(`¡Cuenta creada con éxito, ${res.user.name}! 🚀`, 'success');
-          this.router.navigate(['/tabs']);
+          this.router.navigate(['/onboarding']);
         } else {
           await this.showToast(res.message || 'Error al registrar usuario', 'danger');
         }
@@ -112,9 +116,13 @@ export class LoginPage {
       await loading.dismiss();
       this.isLoading = false;
 
-      if (res.success) {
+      if (res.success && res.user) {
         await this.showToast(`¡Bienvenido, ${res.user.name}! 🥑`, 'success');
-        this.router.navigate(['/tabs']);
+        if (res.user.hasCompletedOnboarding) {
+          this.router.navigate(['/tabs']);
+        } else {
+          this.router.navigate(['/onboarding']);
+        }
       }
     } catch {
       await loading.dismiss();
