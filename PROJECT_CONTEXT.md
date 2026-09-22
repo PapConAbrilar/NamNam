@@ -134,13 +134,18 @@ Para mantener el orden, la trazabilidad del código y evitar conflictos entre lo
 
 ## 🚀 6. Registro de Features Implementadas (Living Registry)
 
-> **Instrucción para Agentes y Desarrolladores:**
-> Cada vez que completes una feature o cambio estructural, agrega una entrada a esta sección explicando **qué hace**, **cómo lo hace** (archivos involucrados, servicios, lógica) y su estado actual.
+> [!IMPORTANT]
+> **REGLA ESTRICTA DE ESTADO PARA AGENTES IA:**
+> Los agentes de IA **NUNCA** deben marcar una feature como `🟢 Completada`. Al implementar o modificar una funcionalidad, el agente **debe registrarla exclusivamente como `🟡 En Revisión`**.
+> **Únicamente un desarrollador humano puede probar la funcionalidad, dar el visto bueno y cambiar el estado a `🟢 Completada`.**
+
+> **Instrucción para Desarrolladores y Agentes:**
+> Cada vez que se desarrolle una feature o cambio estructural, agrega una entrada a esta sección explicando **qué hace**, **cómo lo hace** (archivos involucrados, servicios, lógica) y su estado actual.
 
 ### Plantilla de Entrada:
 ```markdown
 ### [Nombre de la Feature]
-* **Estado:** 🟡 En Desarrollo / 🟢 Completada / 🔴 Pendiente
+* **Estado:** 🟡 En Revisión (Agente) / 🟢 Completada (Solo validada por humano) / 🔴 Pendiente
 * **Fecha:** YYYY-MM-DD
 * **Autor / Responsable:** [Nombre o Agente]
 * **¿Qué hace?**: [Descripción clara de la funcionalidad para el usuario]
@@ -158,28 +163,49 @@ Para mantener el orden, la trazabilidad del código y evitar conflictos entre lo
 #### 1. Configuración del Repositorio y Contexto Base
 * **Estado:** 🟢 Completada
 * **Fecha:** 2026-09-22
-* **Autor / Responsable:** Antigravity AI
+* **Autor / Responsable:** Antigravity AI & Benjamín Pinto
 * **¿Qué hace?**:
-  * Establece los lineamientos de arquitectura, directrices de diseño minimalista con componentes Ionic y la guía de referencia del proyecto para el equipo y agentes de IA.
+  * Establece los lineamientos de arquitectura, directrices de diseño minimalista con componentes Ionic, flujo de Git/GitHub y la guía de referencia del proyecto para el equipo y agentes de IA.
   * Protege el repositorio ignorando la carpeta local `mockup/`.
 * **¿Cómo lo hace?**:
   * **Archivos involucrados:**
     * `PROJECT_CONTEXT.md`: Archivo central de contexto, diseño y registro de features.
+    * `AGENTS.md`: Guía de entrada directa para agentes de IA.
     * `.gitignore`: Adición de `/mockup` para no incluir artefactos de Figma/código de prueba en el control de versiones.
 
 #### 2. Pantalla de Bienvenida / Login y Redirección por Defecto
-* **Estado:** 🟢 Completada
+* **Estado:** � Completada (Validada por Benjamín Pinto)
 * **Fecha:** 2026-09-22
 * **Autor / Responsable:** Antigravity AI & Benjamín Pinto
 * **¿Qué hace?**:
   * Implementa la pantalla inicial de autenticación permitiendo alternar entre "Iniciar Sesión" y "Registrarse" mediante un segmento minimalista.
-  * Incluye campos para nombre (modo registro), correo y contraseña con toggle de visibilidad nativo, botón de acción principal, enlace de recuperación de contraseña y botón social de Google.
+  * Incluye campos nativos (`ion-input fill="outline" shape="round"`) para nombre (modo registro), correo y contraseña con toggle de visibilidad (`ion-input-password-toggle`), eliminando choques de contraste en modo oscuro.
+  * Botón de acción principal con alto contraste (texto oscuro sobre verde lima de marca `#84cc16`), enlace de recuperación de contraseña y botón social de Google adaptado a temas claro y oscuro.
   * Establece esta vista como la ruta por defecto al abrir la aplicación (`/login`).
-  * Al enviar el formulario o continuar con Google, navega hacia el flujo principal (`/tabs`).
 * **¿Cómo lo hace?**:
   * **Componentes / Vistas:** `src/app/pages/login/login.page.ts`, `src/app/pages/login/login.page.html`, `src/app/pages/login/login.page.scss`
   * **Rutas:** `src/app/app.routes.ts` (añade redirección de `''` a `'login'` y carga diferida `loadComponent` de `LoginPage`).
-  * **Estilos / Tema:** `src/theme/variables.scss` (define paleta primaria `#84cc16` lima de ÑamÑam).
-  * **Detalle técnico:** Componente standalone de Angular 22 con `@ionic/angular` utilizando componentes nativos (`ion-content`, `ion-segment`, `ion-list`, `ion-item`, `ion-input`, `ion-input-password-toggle`, `ion-button`, `ion-icon`) y directivas de control de flujo modernas (`@if`).
+  * **Estilos / Tema:** `src/theme/variables.scss` (define paleta primaria `#84cc16` con `--ion-color-primary-contrast: #1a1a2e` para máxima legibilidad).
+  * **Detalle técnico:** Componente standalone de Angular 22 con `@ionic/angular` utilizando componentes nativos (`ion-content`, `ion-segment`, `ion-input`, `ion-input-password-toggle`, `ion-button`, `ion-icon`) con directivas modernas (`@if`). Elimina wrappers `ion-item`/`ion-list` para evitar fondos claros forzados sobre fondos oscuros.
+
+#### 3. Lógica de Autenticación Local y Gestión de Sesión (AuthService)
+* **Estado:** 🟢 Completada (Validada por Benjamín Pinto)
+* **Fecha:** 2026-09-22
+* **Autor / Responsable:** Antigravity AI & Benjamín Pinto
+* **¿Qué hace?**:
+  * Implementa el registro e inicio de sesión local para la primera etapa del proyecto sin requerir backend externo (preparado para migración futura a Supabase).
+  * Soporta:
+    * Registro de nuevos usuarios con validación de email y longitud de contraseña (mínimo 6 caracteres).
+    * Inicio de sesión validando credenciales contra usuarios almacenados localmente.
+    * Usuario de prueba predeterminado precargado: `demo@namnam.com` / `password123`.
+    * Simulación de inicio de sesión con Google (OAuth local).
+    * Persistencia de sesión activa en `localStorage` y estado reactivo vía `currentUser$`.
+    * Feedback visual con `LoadingController` (spinner de carga) y `ToastController` (notificaciones de error y bienvenida).
+* **¿Cómo lo hace?**:
+  * **Modelos / Tipos:** `src/app/models/user.model.ts` (interfaces `UserProfile` y `UserCredentials`).
+  * **Servicios / Lógica:** `src/app/services/auth.service.ts` (`login`, `register`, `loginWithGoogle`, `logout`, almacenamiento en `localStorage` y estado con `BehaviorSubject`).
+  * **Componentes / Vistas:** `src/app/pages/login/login.page.ts` y `login.page.html` (invocación de servicios, control de estados de carga con `[disabled]="isLoading"` y despliegue de mensajes Toast).
+
+
 
 
