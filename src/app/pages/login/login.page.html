@@ -1,0 +1,114 @@
+<ion-content class="ion-padding" [fullscreen]="true">
+  <div class="login-container">
+    <!-- Header / Branding minimalista -->
+    <div class="brand-header ion-text-center">
+      <div class="brand-icon">
+        <span class="emoji">🥑</span>
+      </div>
+      <h1 class="brand-title">ÑamÑam</h1>
+      <p class="brand-subtitle">Come bien. Colecciona todo.</p>
+    </div>
+
+    <!-- Selector de Segmento: Iniciar Sesión / Registrarse -->
+    <ion-segment [(ngModel)]="currentSegment" (ionChange)="onSegmentChange()" [disabled]="isLoading" mode="ios" class="segment-selector">
+      <ion-segment-button value="login">
+        <ion-label>Iniciar Sesión</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="register">
+        <ion-label>Registrarse</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+
+    <!-- Formulario -->
+    <form (ngSubmit)="onSubmit()" class="login-form">
+      <div class="form-fields">
+        <!-- Campo Nombre (solo registro) -->
+        @if (currentSegment === 'register') {
+          <ion-input
+            [(ngModel)]="name"
+            name="name"
+            type="text"
+            label="Nombre completo"
+            labelPlacement="floating"
+            fill="outline"
+            shape="round"
+            placeholder="Ej. Juan Pérez"
+            class="form-input"
+            [disabled]="isLoading"
+            required>
+          </ion-input>
+        }
+
+        <!-- Campo Email -->
+        <ion-input
+          [(ngModel)]="email"
+          name="email"
+          type="email"
+          label="Correo electrónico"
+          labelPlacement="floating"
+          fill="outline"
+          shape="round"
+          placeholder="tucorreo@ejemplo.com"
+          class="form-input"
+          [disabled]="isLoading"
+          required>
+        </ion-input>
+
+        <!-- Campo Contraseña -->
+        <ion-input
+          [(ngModel)]="password"
+          name="password"
+          type="password"
+          label="Contraseña"
+          labelPlacement="floating"
+          fill="outline"
+          shape="round"
+          placeholder="••••••••"
+          class="form-input"
+          [disabled]="isLoading"
+          required>
+          <ion-input-password-toggle slot="end"></ion-input-password-toggle>
+        </ion-input>
+      </div>
+
+      <!-- Botón de Acción Principal -->
+      <ion-button
+        type="submit"
+        expand="block"
+        shape="round"
+        class="submit-button"
+        color="primary"
+        [disabled]="isLoading">
+        {{ currentSegment === 'login' ? 'Iniciar Sesión' : 'Crear Cuenta' }}
+      </ion-button>
+
+      <!-- Recuperación de Contraseña -->
+      @if (currentSegment === 'login') {
+        <div class="ion-text-center ion-margin-top">
+          <ion-button fill="clear" size="small" color="medium" class="forgot-password-btn" [disabled]="isLoading" (click)="onForgotPassword()">
+            ¿Olvidaste tu contraseña?
+          </ion-button>
+        </div>
+      }
+
+      <!-- Separador -->
+      <div class="divider">
+        <span>o continúa con</span>
+      </div>
+
+      <!-- Botón Google -->
+      <ion-button
+        type="button"
+        expand="block"
+        fill="outline"
+        shape="round"
+        class="social-button"
+        [disabled]="isLoading"
+        (click)="onGoogleLogin()">
+        <ion-icon slot="start" name="logo-google"></ion-icon>
+        Continuar con Google
+      </ion-button>
+    </form>
+  </div>
+</ion-content>
+
