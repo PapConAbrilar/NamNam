@@ -167,3 +167,19 @@ Para mantener el orden, la trazabilidad del código y evitar conflictos entre lo
     * `PROJECT_CONTEXT.md`: Archivo central de contexto, diseño y registro de features.
     * `.gitignore`: Adición de `/mockup` para no incluir artefactos de Figma/código de prueba en el control de versiones.
 
+#### 2. Pantalla de Bienvenida / Login y Redirección por Defecto
+* **Estado:** 🟢 Completada
+* **Fecha:** 2026-09-22
+* **Autor / Responsable:** Antigravity AI & Benjamín Pinto
+* **¿Qué hace?**:
+  * Implementa la pantalla inicial de autenticación permitiendo alternar entre "Iniciar Sesión" y "Registrarse" mediante un segmento minimalista.
+  * Incluye campos para nombre (modo registro), correo y contraseña con toggle de visibilidad nativo, botón de acción principal, enlace de recuperación de contraseña y botón social de Google.
+  * Establece esta vista como la ruta por defecto al abrir la aplicación (`/login`).
+  * Al enviar el formulario o continuar con Google, navega hacia el flujo principal (`/tabs`).
+* **¿Cómo lo hace?**:
+  * **Componentes / Vistas:** `src/app/pages/login/login.page.ts`, `src/app/pages/login/login.page.html`, `src/app/pages/login/login.page.scss`
+  * **Rutas:** `src/app/app.routes.ts` (añade redirección de `''` a `'login'` y carga diferida `loadComponent` de `LoginPage`).
+  * **Estilos / Tema:** `src/theme/variables.scss` (define paleta primaria `#84cc16` lima de ÑamÑam).
+  * **Detalle técnico:** Componente standalone de Angular 22 con `@ionic/angular` utilizando componentes nativos (`ion-content`, `ion-segment`, `ion-list`, `ion-item`, `ion-input`, `ion-input-password-toggle`, `ion-button`, `ion-icon`) y directivas de control de flujo modernas (`@if`).
+
+
