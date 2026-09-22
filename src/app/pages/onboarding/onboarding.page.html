@@ -1,0 +1,231 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <div class="header-content">
+      <div class="step-meta">
+        <span class="step-badge">Paso {{ currentStep }} de {{ totalSteps }}</span>
+        <h2 class="step-title">
+          @if (currentStep === 1) { Datos Biométricos 📏 }
+          @if (currentStep === 2) { Nivel de Actividad ⚡ }
+          @if (currentStep === 3) { Tu Meta Principal 🎯 }
+        </h2>
+      </div>
+      <ion-progress-bar [value]="progressValue" color="primary" class="step-progress"></ion-progress-bar>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div class="onboarding-container">
+
+    <!-- ==================== PASO 1: BIOMETRÍA ==================== -->
+    @if (currentStep === 1) {
+      <div class="step-body">
+        <p class="step-description">
+          Necesitamos estos datos para calcular tu gasto calórico basal de manera precisa.
+        </p>
+
+        <div class="form-grid">
+          <!-- Peso -->
+          <ion-input
+            [(ngModel)]="weightKg"
+            type="number"
+            label="Peso (kg)"
+            labelPlacement="floating"
+            fill="outline"
+            shape="round"
+            placeholder="Ej. 70"
+            min="30"
+            max="300"
+            class="input-field"
+            required>
+          </ion-input>
+
+          <!-- Altura -->
+          <ion-input
+            [(ngModel)]="heightCm"
+            type="number"
+            label="Altura (cm)"
+            labelPlacement="floating"
+            fill="outline"
+            shape="round"
+            placeholder="Ej. 170"
+            min="100"
+            max="250"
+            class="input-field"
+            required>
+          </ion-input>
+
+          <!-- Edad -->
+          <ion-input
+            [(ngModel)]="age"
+            type="number"
+            label="Edad (años)"
+            labelPlacement="floating"
+            fill="outline"
+            shape="round"
+            placeholder="Ej. 25"
+            min="12"
+            max="110"
+            class="input-field"
+            required>
+          </ion-input>
+        </div>
+
+        <!-- Sexo Biológico -->
+        <div class="gender-section">
+          <label class="section-label">Sexo biológico</label>
+          <div class="gender-buttons">
+            <button
+              type="button"
+              class="gender-btn"
+              [class.active]="gender === 'male'"
+              (click)="selectGender('male')">
+              <span class="gender-emoji">♂️</span>
+              <span class="gender-text">Masculino</span>
+            </button>
+            <button
+              type="button"
+              class="gender-btn"
+              [class.active]="gender === 'female'"
+              (click)="selectGender('female')">
+              <span class="gender-emoji">♀️</span>
+              <span class="gender-text">Femenino</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- ==================== PASO 2: ACTIVIDAD ==================== -->
+    @if (currentStep === 2) {
+      <div class="step-body">
+        <p class="step-description">
+          ¿Cuánto te mueves habitualmente? Esto ajusta tu gasto energético diario (TDEE).
+        </p>
+
+        <div class="options-list">
+          @for (option of activityOptions; track option.id) {
+            <button
+              type="button"
+              class="selection-card"
+              [class.selected]="activityLevel === option.id"
+              (click)="selectActivity(option.id)">
+              <div class="card-left">
+                <div class="radio-indicator">
+                  @if (activityLevel === option.id) {
+                    <ion-icon name="checkmark-circle" color="primary"></ion-icon>
+                  }
+                </div>
+                <div class="card-text">
+                  <h3 class="card-title">{{ option.title }}</h3>
+                  <p class="card-subtitle">{{ option.desc }}</p>
+                </div>
+              </div>
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- ==================== PASO 3: META Y CÁLCULO ==================== -->
+    @if (currentStep === 3) {
+      <div class="step-body">
+        <p class="step-description">
+          Selecciona tu objetivo para calcular tu presupuesto calórico y reparto de macronutrientes.
+        </p>
+
+        <!-- Opciones de Meta -->
+        <div class="options-list">
+          @for (option of goalOptions; track option.id) {
+            <button
+              type="button"
+              class="selection-card"
+              [class.selected]="goal === option.id"
+              (click)="selectGoal(option.id)">
+              <div class="card-left">
+                <span class="goal-emoji">{{ option.emoji }}</span>
+                <div class="card-text">
+                  <h3 class="card-title">{{ option.title }}</h3>
+                  <p class="card-subtitle">{{ option.desc }}</p>
+                </div>
+              </div>
+              <div class="radio-indicator">
+                @if (goal === option.id) {
+                  <ion-icon name="checkmark-circle" color="primary"></ion-icon>
+                }
+              </div>
+            </button>
+          }
+        </div>
+
+        <!-- Tarjeta de Resultado Calculado -->
+        <ion-card class="result-card">
+          <ion-card-content>
+            <div class="result-header">
+              <span class="result-label">🔥 Tu Meta Diaria Calculada</span>
+              <div class="calories-display">
+                <span class="calories-number">{{ calculatedCalories | number }}</span>
+                <span class="calories-unit">kcal / día</span>
+              </div>
+            </div>
+
+            <div class="macros-preview">
+              <div class="macro-item protein">
+                <span class="macro-value">{{ calculatedProtein }}g</span>
+                <span class="macro-name">Proteínas</span>
+              </div>
+              <div class="macro-item carbs">
+                <span class="macro-value">{{ calculatedCarbs }}g</span>
+                <span class="macro-name">Carbos</span>
+              </div>
+              <div class="macro-item fat">
+                <span class="macro-value">{{ calculatedFat }}g</span>
+                <span class="macro-name">Grasas</span>
+              </div>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </div>
+    }
+
+    <!-- ==================== BOTONES DE NAVEGACIÓN ==================== -->
+    <div class="navigation-footer">
+      @if (currentStep > 1) {
+        <ion-button
+          fill="clear"
+          color="medium"
+          class="btn-back"
+          [disabled]="isLoading"
+          (click)="prevStep()">
+          <ion-icon slot="start" name="arrow-back-outline"></ion-icon>
+          Atrás
+        </ion-button>
+      }
+
+      @if (currentStep < totalSteps) {
+        <ion-button
+          expand="block"
+          shape="round"
+          color="primary"
+          class="btn-next"
+          [disabled]="isLoading"
+          (click)="nextStep()">
+          Continuar
+          <ion-icon slot="end" name="arrow-forward-outline"></ion-icon>
+        </ion-button>
+      } @else {
+        <ion-button
+          expand="block"
+          shape="round"
+          color="primary"
+          class="btn-finish"
+          [disabled]="isLoading"
+          (click)="finishOnboarding()">
+          ¡Comenzar en ÑamÑam! 🚀
+        </ion-button>
+      }
+    </div>
+
+  </div>
+</ion-content>
+

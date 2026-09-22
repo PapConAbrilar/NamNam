@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { UserProfile } from '../models/user.model';
+import { UserProfile, UserMetrics } from '../models/user.model';
 
 @Injectable({
   providedIn: 'root',
@@ -134,6 +134,34 @@ export class AuthService {
 
     this.setSession(profile);
     return { success: true, user: profile };
+  }
+
+  async completeOnboarding(metrics: UserMetrics): Promise<{ success: boolean; user?: UserProfile; message?: string }> {
+    const active = this.currentUser;
+    if (!active) {
+      return { success: false, message: 'No hay una sesión activa para completar el perfil.' };
+    }
+
+    const updatedProfile: UserProfile = {
+      ...active,
+      hasCompletedOnboarding: true,
+      metrics,
+    };
+
+    // Actualiza en el listado general de usuarios locales
+    const users = this.getLocalUsers();
+    const index = users.findIndex((u) => u.id === active.id);
+    if (index !== -1) {
+      users[index] = {
+        ...users[index],
+        hasCompletedOnboarding: true,
+        metrics,
+      };
+      localStorage.setItem(this.USERS_STORAGE_KEY, JSON.stringify(users));
+    }
+
+    this.setSession(updatedProfile);
+    return { success: true, user: updatedProfile };
   }
 
   logout(): void {

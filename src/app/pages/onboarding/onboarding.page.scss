@@ -1,0 +1,282 @@
+.header-content {
+  padding: 0.75rem 1rem 0.25rem 1rem;
+}
+
+.step-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+
+  .step-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--ion-color-step-600, var(--ion-color-medium));
+  }
+
+  .step-title {
+    font-size: 1.35rem;
+    font-weight: 800;
+    margin: 0;
+    color: var(--ion-text-color);
+  }
+}
+
+.step-progress {
+  height: 6px;
+  border-radius: 4px;
+  --background: var(--ion-color-step-150, rgba(128, 128, 128, 0.2));
+}
+
+.onboarding-container {
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100% - 1rem);
+  justify-content: space-between;
+}
+
+.step-body {
+  flex: 1;
+}
+
+.step-description {
+  font-size: 0.9rem;
+  color: var(--ion-color-step-600, var(--ion-color-medium));
+  margin-top: 0.25rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.4;
+}
+
+.form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  margin-bottom: 1.5rem;
+}
+
+.input-field {
+  --border-radius: 14px;
+  font-size: 0.95rem;
+}
+
+/* Sexo biológico */
+.gender-section {
+  margin-top: 0.5rem;
+
+  .section-label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.6rem;
+    color: var(--ion-text-color);
+  }
+
+  .gender-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  .gender-btn {
+    background: transparent;
+    border: 1.5px solid var(--ion-color-step-200, rgba(128, 128, 128, 0.3));
+    border-radius: 14px;
+    padding: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--ion-text-color);
+
+    .gender-emoji {
+      font-size: 1.1rem;
+    }
+
+    .gender-text {
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    &.active {
+      border-color: var(--ion-color-primary);
+      background: rgba(var(--ion-color-primary-rgb), 0.12);
+      color: var(--ion-text-color);
+    }
+  }
+}
+
+/* Lista de tarjetas seleccionables */
+.options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.selection-card {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1.5px solid var(--ion-color-step-200, rgba(128, 128, 128, 0.25));
+  border-radius: 16px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--ion-text-color);
+
+  .card-left {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+  }
+
+  .card-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--ion-text-color);
+  }
+
+  .card-subtitle {
+    font-size: 0.8rem;
+    color: var(--ion-color-step-600, var(--ion-color-medium));
+    margin: 0.2rem 0 0 0;
+  }
+
+  .goal-emoji {
+    font-size: 1.8rem;
+  }
+
+  .radio-indicator {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--ion-color-step-300, rgba(128, 128, 128, 0.4));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+
+    ion-icon {
+      font-size: 24px;
+      margin: -2px;
+    }
+  }
+
+  &.selected {
+    border-color: var(--ion-color-primary);
+    background: rgba(var(--ion-color-primary-rgb), 0.08);
+
+    .radio-indicator {
+      border-color: var(--ion-color-primary);
+    }
+  }
+}
+
+/* Tarjeta de resultado calculado */
+.result-card {
+  margin: 1.5rem 0 0.5rem 0;
+  border-radius: 20px;
+  border: 1.5px solid rgba(var(--ion-color-primary-rgb), 0.35);
+  background: rgba(var(--ion-color-primary-rgb), 0.06);
+  box-shadow: none;
+
+  .result-header {
+    text-align: center;
+    margin-bottom: 1.25rem;
+
+    .result-label {
+      display: inline-block;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--ion-color-step-700, var(--ion-color-medium));
+      margin-bottom: 0.4rem;
+    }
+
+    .calories-display {
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 0.35rem;
+
+      .calories-number {
+        font-size: 2.2rem;
+        font-weight: 900;
+        color: var(--ion-text-color);
+        letter-spacing: -1px;
+      }
+
+      .calories-unit {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--ion-color-step-600, var(--ion-color-medium));
+      }
+    }
+  }
+
+  .macros-preview {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    text-align: center;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--ion-color-step-150, rgba(128, 128, 128, 0.2));
+
+    .macro-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+
+      .macro-value {
+        font-size: 1.1rem;
+        font-weight: 800;
+      }
+
+      .macro-name {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--ion-color-step-600, var(--ion-color-medium));
+      }
+
+      &.protein .macro-value { color: #60a5fa; }
+      &.carbs .macro-value { color: #fbbf24; }
+      &.fat .macro-value { color: #f87171; }
+    }
+  }
+}
+
+/* Footer de navegación */
+.navigation-footer {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-bottom: 0.5rem;
+
+  .btn-back {
+    flex: 0 0 auto;
+    --border-radius: 14px;
+    font-weight: 600;
+    height: 50px;
+  }
+
+  .btn-next,
+  .btn-finish {
+    flex: 1;
+    --border-radius: 14px;
+    font-weight: 700;
+    font-size: 1rem;
+    height: 50px;
+  }
+}
+

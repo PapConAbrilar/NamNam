@@ -206,6 +206,24 @@ Para mantener el orden, la trazabilidad del código y evitar conflictos entre lo
   * **Servicios / Lógica:** `src/app/services/auth.service.ts` (`login`, `register`, `loginWithGoogle`, `logout`, almacenamiento en `localStorage` y estado con `BehaviorSubject`).
   * **Componentes / Vistas:** `src/app/pages/login/login.page.ts` y `login.page.html` (invocación de servicios, control de estados de carga con `[disabled]="isLoading"` y despliegue de mensajes Toast).
 
+#### 4. Flujo de Onboarding y Perfilamiento Nutricional
+* **Estado:** 🟢 Completada (Validada por Benjamín Pinto)
+* **Fecha:** 2026-09-22
+* **Autor / Responsable:** Antigravity AI & Benjamín Pinto
+* **¿Qué hace?**:
+  * Guía a los nuevos usuarios registrados en un asistente paso a paso de 3 etapas para crear su perfil nutricional:
+    * **Paso 1 (Biometría):** Captura de peso (kg), altura (cm), edad y sexo biológico (masculino/femenino) con validaciones de rangos saludables.
+    * **Paso 2 (Nivel de Actividad):** Selección entre 4 niveles (Sedentario, Ligero, Moderado, Muy Activo) que definen el factor multiplicador de actividad física.
+    * **Paso 3 (Meta Nutricional y Cálculo TDEE):** Selección de objetivo (Perder Peso 🔥, Mantenimiento ⚖️, Ganar Masa 💪). Calcula en tiempo real la meta calórica diaria mediante la fórmula de Mifflin-St Jeor junto al desglose estimado de macronutrientes (25% proteínas, 50% carbohidratos, 25% grasas).
+  * Redirige automáticamente desde el Login/Registro al Onboarding si el usuario no ha completado este proceso (`hasCompletedOnboarding: false`).
+  * Al completar el asistente, actualiza el perfil en `AuthService`, guarda las métricas en almacenamiento local y navega al dashboard principal (`/tabs`).
+* **¿Cómo lo hace?**:
+  * **Modelos / Tipos:** `src/app/models/user.model.ts` (tipos `BiologicalGender`, `ActivityLevel`, `FitnessGoal` e interfaz `UserMetrics`).
+  * **Servicios / Lógica:** `src/app/services/auth.service.ts` (método `completeOnboarding` que actualiza la sesión y el registro de usuarios).
+  * **Componentes / Vistas:** `src/app/pages/onboarding/onboarding.page.ts`, `onboarding.page.html`, `onboarding.page.scss` (componente standalone con `ion-header`, `ion-progress-bar`, `ion-input`, `ion-card` y estilos adaptables al modo oscuro/claro).
+  * **Rutas:** `src/app/app.routes.ts` (añade ruta `onboarding` con carga perezosa).
+
+
 
 
 
