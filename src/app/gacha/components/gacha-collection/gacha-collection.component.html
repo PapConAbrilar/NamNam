@@ -1,0 +1,34 @@
+<div class="gacha-header">
+  <div class="gacha-currency">
+    <ion-icon name="sparkles-outline" />
+    <span>{{ currency }}</span>
+  </div>
+  <div class="gacha-actions">
+    <ion-button size="small" [disabled]="currency < singleCost" (click)="onSingleTap()">
+      <ion-icon name="dice-outline" slot="start" />
+      Tirar ({{ singleCost }})
+    </ion-button>
+    <ion-button size="small" fill="outline" [disabled]="currency < bulkCost" (click)="onBulkTap()">
+      Tirar x5 ({{ bulkCost }})
+    </ion-button>
+  </div>
+</div>
+
+<div class="gacha-grid">
+  @for (item of catalog; track item.id) {
+    @let owned = ownedFor(item.id);
+    <div class="gacha-item" [class.locked]="!owned" (click)="onItemTap(item.id)">
+      @if (owned && owned.rank > 0) {
+        <ion-badge color="dark" class="gacha-rank-badge">+{{ owned.rank }}</ion-badge>
+      }
+      <div class="gacha-item-emoji">{{ owned ? item.emoji : '🔒' }}</div>
+      <span class="gacha-item-name">{{ owned ? item.name : '???' }}</span>
+      <span
+        class="gacha-item-rarity"
+        [style.color]="rarityConfig[item.rarity].color"
+      >
+        {{ rarityConfig[item.rarity].label }}
+      </span>
+    </div>
+  }
+</div>
