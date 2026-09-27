@@ -1,9 +1,11 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { getItemDef } from '../data/catalog';
 import { rollPull } from '../engine/gacha-engine';
 import { costFor, MERGE_COST, pullCountFor } from '../data/rarity-config';
 import { CollectionItemDef, Inventory, PullType } from '../models/gacha.types';
+import { AuthService } from '../../services/auth.service';
+import { SupabaseService, isSupabaseConfigured } from '../../services/supabase.service';
 
 export interface GachaState {
   currency: number;
@@ -35,10 +37,24 @@ export class GachaService {
   private readonly CURRENCY_STORAGE_KEY = 'namnam_gacha_currency';
   private readonly INVENTORY_STORAGE_KEY = 'namnam_gacha_inventory';
   private readonly PET_STORAGE_KEY = 'namnam_gacha_pet';
-  private readonly DEFAULT_STARTING_CURRENCY = 10000;
+  private readonly DEFAULT_STARTING_CURRENCY = 1000;
+
+  private authService = inject(AuthService);
+  private supabaseService = inject(SupabaseService);
 
   private stateSubject = new BehaviorSubject<GachaState>(this.loadInitialState());
   public state$: Observable<GachaState> = this.stateSubject.asObservable();
+
+  constructor() {
+    // Sincronizar desde Supabase al autenticarse o cambiar de usuario
+    this.authService.currentUser$.subscribe((user) => {
+      if (user && isSupabaseConfigured()) {
+        this.syncFromSupabase(user.id).catch((err) => {
+          console.warn('Error sincronizando Gacha desde Supabase:', err);
+        });
+      }
+    });
+  }
 
   get state(): GachaState {
     return this.stateSubject.value;
@@ -58,18 +74,14 @@ export class GachaService {
 
   /**
    * Otorga moneda al usuario (ej. al registrar una comida, por racha,
-   * etc.). Punto de integración futuro: cuando exista esa lógica en el
-   * resto de la app, debería llamar a este método en vez de manipular el
-   * balance directamente.
+   * etc.).
    */
   addCurrency(amount: number): void {
     this.persist({ ...this.state, currency: this.state.currency + amount });
   }
 
   /**
-   * Ejecuta una tirada de forma instantánea. Sin llamada a backend por
-   * ahora — el resultado se decide y se aplica en el mismo tick. Ver
-   * MANUAL.md para cómo migrar esto a una API real más adelante.
+   * Ejecuta una tirada de forma instantánea.
    */
   pull(type: PullType): PullOutcome {
     const cost = costFor(type);
@@ -143,8 +155,7 @@ export class GachaService {
 
   /**
    * Craftea un ítem a partir de su receta (consume copias base de cada
-   * ingrediente). Versión más básica posible: sin animación, aplica el
-   * cambio directo si alcanzan los ingredientes.
+   * ingrediente).
    */
   craft(itemId: string): CraftOutcome {
     const def = getItemDef(itemId);
@@ -161,7 +172,7 @@ export class GachaService {
     const inventory: Inventory = { ...this.inventory };
     def.recipe.forEach((ing) => {
       const owned = inventory[ing.itemId];
-      if (!owned) return; // no debería pasar, ya validamos arriba
+      if (!owned) return;
       inventory[ing.itemId] = { ...owned, baseCopiesHeld: owned.baseCopiesHeld - ing.quantity };
     });
 
@@ -182,10 +193,9 @@ export class GachaService {
 
   /**
    * Botón de "refresh" del MVP: agrega moneda de prueba sin tocar
-   * inventario ni mascota. Pensado solo para poder probar tiradas
-   * repetidas sin quedarte sin saldo.
+   * inventario ni mascota.
    */
-  addTestCurrency(amount = 10000): void {
+  addTestCurrency(amount = 1000): void {
     this.persist({ ...this.state, currency: this.state.currency + amount });
   }
 
@@ -222,5 +232,113 @@ export class GachaService {
       localStorage.removeItem(this.PET_STORAGE_KEY);
     }
     this.stateSubject.next(next);
+
+    // Si Supabase está conectado y hay usuario autenticado, sincronizar en la nube
+    const user = this.authService.currentUser;
+    if (isSupabaseConfigured() && user) {
+      this.syncToSupabase(user.id, next).catch((err) => {
+        console.warn('Error sincronizando Gacha con Supabase:', err);
+      });
+    }
+  }
+
+  /** Sincroniza el inventario y las monedas hacia Supabase */
+  private async syncToSupabase(userId: string, state: GachaState): Promise<void> {
+    try {
+      const client = this.supabaseService.client;
+
+      // 1. Guardar moneda y mascota en el perfil
+      await client
+        .from('profiles')
+        .update({
+          gacha_currency: state.currency,
+          pet_item_id: state.petItemId,
+        })
+        .eq('id', userId);
+
+      // 2. Guardar inventario
+      const items = Object.values(state.inventory);
+      if (items.length > 0) {
+        const rows = items.map((item) => ({
+          user_id: userId,
+          item_id: item.itemId,
+          rank: item.rank,
+          base_copies_held: item.baseCopiesHeld,
+          first_obtained_at: new Date(item.firstObtainedAt).toISOString(),
+        }));
+
+        await client
+          .from('user_gacha_inventory')
+          .upsert(rows, { onConflict: 'user_id,item_id' });
+      }
+    } catch (err) {
+      console.warn('Fallo al persistir estado del Gacha en Supabase:', err);
+    }
+  }
+
+  /** Descarga el inventario y las monedas desde Supabase */
+  private async syncFromSupabase(userId: string): Promise<void> {
+    try {
+      const client = this.supabaseService.client;
+
+      // 1. Obtener moneda y mascota del perfil
+      const { data: profile } = await client
+        .from('profiles')
+        .select('gacha_currency, pet_item_id')
+        .eq('id', userId)
+        .maybeSingle();
+
+      // 2. Obtener inventario del usuario
+      const { data: rows } = await client
+        .from('user_gacha_inventory')
+        .select('item_id, rank, base_copies_held, first_obtained_at')
+        .eq('user_id', userId);
+
+      let currency = this.state.currency;
+      let petItemId = this.state.petItemId;
+      const inventory: Inventory = {};
+
+      if (profile) {
+        if (typeof profile.gacha_currency === 'number') {
+          currency = profile.gacha_currency;
+        }
+        if (profile.pet_item_id !== undefined) {
+          petItemId = profile.pet_item_id;
+        }
+      }
+
+      if (rows && rows.length > 0) {
+        for (const row of rows) {
+          inventory[row.item_id] = {
+            itemId: row.item_id,
+            rank: row.rank,
+            baseCopiesHeld: row.base_copies_held,
+            firstObtainedAt: new Date(row.first_obtained_at).getTime(),
+          };
+        }
+      } else if (Object.keys(this.state.inventory).length > 0) {
+        // Si el usuario tenía inventario local pero nada en Supabase, subimos el inventario local
+        Object.assign(inventory, this.state.inventory);
+        this.syncToSupabase(userId, { currency, inventory, petItemId }).catch(() => {});
+      }
+
+      const nextState: GachaState = {
+        currency,
+        inventory,
+        petItemId,
+      };
+
+      localStorage.setItem(this.CURRENCY_STORAGE_KEY, String(nextState.currency));
+      localStorage.setItem(this.INVENTORY_STORAGE_KEY, JSON.stringify(nextState.inventory));
+      if (nextState.petItemId) {
+        localStorage.setItem(this.PET_STORAGE_KEY, nextState.petItemId);
+      } else {
+        localStorage.removeItem(this.PET_STORAGE_KEY);
+      }
+
+      this.stateSubject.next(nextState);
+    } catch (err) {
+      console.warn('Fallo al obtener estado del Gacha desde Supabase:', err);
+    }
   }
 }
