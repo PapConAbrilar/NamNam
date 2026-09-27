@@ -36,6 +36,15 @@ export class AuthService {
     return !this.isSessionLoadedSubject.value;
   }
 
+  /** Determina si la sesión actual pertenece a un usuario real autenticado en Supabase */
+  get isCurrentSessionSupabase(): boolean {
+    return (
+      isSupabaseConfigured() &&
+      !!this.currentUser &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(this.currentUser.id)
+    );
+  }
+
   /** Permite que los Route Guards esperen la resolución de sesión al arrancar la app */
   async waitForSession(): Promise<UserProfile | null> {
     if (this.isSessionLoadedSubject.value) {
@@ -272,7 +281,7 @@ export class AuthService {
 
   async loginWithGoogle(): Promise<{ success: boolean; user: UserProfile }> {
     const profile: UserProfile = {
-      id: 'google_' + Date.now(),
+      id: 'user-google-demo',
       name: 'Usuario Google',
       email: 'usuario.google@gmail.com',
       avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
@@ -302,7 +311,7 @@ export class AuthService {
       metrics,
     };
 
-    if (isSupabaseConfigured()) {
+    if (this.isCurrentSessionSupabase) {
       try {
         const client = this.supabaseService.client;
         await client
