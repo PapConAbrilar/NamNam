@@ -2,6 +2,9 @@
   <div class="gacha-currency">
     <ion-icon name="sparkles-outline" />
     <span>{{ currency }}</span>
+    <button class="gacha-refresh-btn" (click)="onRefreshTap()" aria-label="Agregar moneda de prueba">
+      <ion-icon name="refresh-outline" />
+    </button>
   </div>
   <div class="gacha-actions">
     <ion-button size="small" [disabled]="currency < singleCost" (click)="onSingleTap()">
@@ -14,19 +17,41 @@
   </div>
 </div>
 
+@if (petDef; as pet) {
+  <div class="gacha-pet-overlay">
+    <span class="gacha-pet-emoji">{{ pet.emoji }}</span>
+    @if (petRank > 0) {
+      <ion-badge color="dark" class="gacha-pet-rank">+{{ petRank }}</ion-badge>
+    }
+  </div>
+}
+
 <div class="gacha-grid">
   @for (item of catalog; track item.id) {
     @let owned = ownedFor(item.id);
-    <div class="gacha-item" [class.locked]="!owned" (click)="onItemTap(item.id)">
+    @let craftable = hasRecipe(item.id);
+    <div
+      class="gacha-item"
+      [class.locked]="!owned"
+      [class.craftable]="craftable"
+      (click)="onItemTap(item.id)"
+    >
       @if (owned && owned.rank > 0) {
         <ion-badge color="dark" class="gacha-rank-badge">+{{ owned.rank }}</ion-badge>
       }
+      @if (owned) {
+        <button class="gacha-pet-pin" (click)="onSetPet($event, item.id)" aria-label="Poner como mascota">
+          <ion-icon name="paw" />
+        </button>
+      }
+      @if (craftable) {
+        <button class="gacha-craft-btn" (click)="onCraftTap($event, item.id)" aria-label="Craftear">
+          🛠️
+        </button>
+      }
       <div class="gacha-item-emoji">{{ owned ? item.emoji : '🔒' }}</div>
       <span class="gacha-item-name">{{ owned ? item.name : '???' }}</span>
-      <span
-        class="gacha-item-rarity"
-        [style.color]="rarityConfig[item.rarity].color"
-      >
+      <span class="gacha-item-rarity" [style.color]="rarityConfig[item.rarity].color">
         {{ rarityConfig[item.rarity].label }}
       </span>
     </div>

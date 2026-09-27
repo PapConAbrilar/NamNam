@@ -1,1 +1,0 @@
- import { Component } from '@angular/core'; import { GachaCollectionComponent } from './gacha/components/gacha-collection/gacha-collection.component'; @Component({ selector: 'app-gacha-test', standalone: true, imports: [GachaCollectionComponent], template: `<app-gacha-collection />`, }) export class GachaTestComponent {}

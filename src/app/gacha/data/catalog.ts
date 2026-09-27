@@ -1,8 +1,8 @@
 import { CollectionItemDef } from '../models/gacha.types';
 
 // Común = crudo/ingrediente base. Raro = procesado de un paso.
-// Épico/Legendario = plato compuesto (el crafting vía receta queda fuera
-// de este MVP — por ahora también se consiguen por pull, igual que el resto).
+// Épico/Legendario = plato compuesto — se puede craftear con la receta,
+// o conseguir directo por pull (ambas vías activas).
 export const CATALOG: CollectionItemDef[] = [
   // Común
   { id: 'tomato', name: 'Tomate', emoji: '🍅', rarity: 'common' },
@@ -21,12 +21,27 @@ export const CATALOG: CollectionItemDef[] = [
   { id: 'butter', name: 'Mantequilla', emoji: '🧈', rarity: 'rare' },
   { id: 'olive', name: 'Aceituna', emoji: '🫒', rarity: 'rare' },
   // Épico
-  { id: 'pizza', name: 'Pizza', emoji: '🍕', rarity: 'epic' },
-  { id: 'sushi', name: 'Sushi', emoji: '🍣', rarity: 'epic' },
-  { id: 'taco', name: 'Taco', emoji: '🌮', rarity: 'epic' },
+  {
+    id: 'pizza', name: 'Pizza', emoji: '🍕', rarity: 'epic',
+    recipe: [{ itemId: 'tomato', quantity: 2 }, { itemId: 'cheese', quantity: 2 }, { itemId: 'bread', quantity: 1 }],
+  },
+  {
+    id: 'sushi', name: 'Sushi', emoji: '🍣', rarity: 'epic',
+    recipe: [{ itemId: 'rice', quantity: 2 }, { itemId: 'fish', quantity: 1 }, { itemId: 'salt', quantity: 1 }],
+  },
+  {
+    id: 'taco', name: 'Taco', emoji: '🌮', rarity: 'epic',
+    recipe: [{ itemId: 'tomato', quantity: 1 }, { itemId: 'lettuce', quantity: 1 }, { itemId: 'cheese', quantity: 1 }],
+  },
   // Legendario
-  { id: 'golden_cake', name: 'Pastel Dorado', emoji: '🎂', rarity: 'legendary' },
-  { id: 'ramen', name: 'Ramen Supremo', emoji: '🍜', rarity: 'legendary' },
+  {
+    id: 'golden_cake', name: 'Pastel Dorado', emoji: '🎂', rarity: 'legendary',
+    recipe: [{ itemId: 'egg', quantity: 1 }, { itemId: 'honey', quantity: 2 }, { itemId: 'butter', quantity: 1 }],
+  },
+  {
+    id: 'ramen', name: 'Ramen Supremo', emoji: '🍜', rarity: 'legendary',
+    recipe: [{ itemId: 'sushi', quantity: 1 }, { itemId: 'fish', quantity: 1 }, { itemId: 'salt', quantity: 1 }],
+  },
 ];
 
 export function getItemDef(itemId: string): CollectionItemDef | undefined {

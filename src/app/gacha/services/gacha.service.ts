@@ -8,6 +8,7 @@ import { CollectionItemDef, Inventory, PullType } from '../models/gacha.types';
 export interface GachaState {
   currency: number;
   inventory: Inventory;
+  petItemId: string | null;
 }
 
 export interface PullOutcome {
@@ -22,13 +23,19 @@ export interface MergeOutcome {
   newRank?: number;
 }
 
+export interface CraftOutcome {
+  success: boolean;
+  message?: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
 export class GachaService {
   private readonly CURRENCY_STORAGE_KEY = 'namnam_gacha_currency';
   private readonly INVENTORY_STORAGE_KEY = 'namnam_gacha_inventory';
-  private readonly DEFAULT_STARTING_CURRENCY = 1000;
+  private readonly PET_STORAGE_KEY = 'namnam_gacha_pet';
+  private readonly DEFAULT_STARTING_CURRENCY = 10000;
 
   private stateSubject = new BehaviorSubject<GachaState>(this.loadInitialState());
   public state$: Observable<GachaState> = this.stateSubject.asObservable();
@@ -43,6 +50,10 @@ export class GachaService {
 
   get inventory(): Inventory {
     return this.stateSubject.value.inventory;
+  }
+
+  get petItemId(): string | null {
+    return this.stateSubject.value.petItemId;
   }
 
   /**
@@ -77,7 +88,7 @@ export class GachaService {
         : { itemId: item.id, rank: 0, baseCopiesHeld: 1, firstObtainedAt: Date.now() };
     });
 
-    this.persist({ currency: this.currency - cost, inventory });
+    this.persist({ ...this.state, currency: this.currency - cost, inventory });
     return { success: true, results: wonItems };
   }
 
@@ -117,10 +128,72 @@ export class GachaService {
     return { success: true, newRank: nextRank };
   }
 
+  /** Ingredientes que faltan para craftear este ítem ahora mismo (vacío si ya se puede craftear). */
+  missingIngredientsFor(itemId: string): { itemId: string; name: string; missing: number }[] {
+    const def = getItemDef(itemId);
+    if (!def?.recipe) return [];
+    return def.recipe
+      .map((ing) => {
+        const held = this.inventory[ing.itemId]?.baseCopiesHeld ?? 0;
+        const missing = Math.max(0, ing.quantity - held);
+        return { itemId: ing.itemId, name: getItemDef(ing.itemId)?.name ?? ing.itemId, missing };
+      })
+      .filter((ing) => ing.missing > 0);
+  }
+
+  /**
+   * Craftea un ítem a partir de su receta (consume copias base de cada
+   * ingrediente). Versión más básica posible: sin animación, aplica el
+   * cambio directo si alcanzan los ingredientes.
+   */
+  craft(itemId: string): CraftOutcome {
+    const def = getItemDef(itemId);
+    if (!def?.recipe) {
+      return { success: false, message: 'Este ítem no tiene receta de crafteo.' };
+    }
+
+    const missing = this.missingIngredientsFor(itemId);
+    if (missing.length > 0) {
+      const detail = missing.map((m) => `${m.missing}x ${m.name}`).join(', ');
+      return { success: false, message: `Te falta: ${detail}` };
+    }
+
+    const inventory: Inventory = { ...this.inventory };
+    def.recipe.forEach((ing) => {
+      const owned = inventory[ing.itemId];
+      if (!owned) return; // no debería pasar, ya validamos arriba
+      inventory[ing.itemId] = { ...owned, baseCopiesHeld: owned.baseCopiesHeld - ing.quantity };
+    });
+
+    const existingResult = inventory[itemId];
+    inventory[itemId] = existingResult
+      ? { ...existingResult, baseCopiesHeld: existingResult.baseCopiesHeld + 1 }
+      : { itemId, rank: 0, baseCopiesHeld: 1, firstObtainedAt: Date.now() };
+
+    this.persist({ ...this.state, inventory });
+    return { success: true };
+  }
+
+  /** Selecciona qué ítem de la colección se muestra como mascota (overlay). */
+  selectPet(itemId: string): void {
+    if (!this.inventory[itemId]) return;
+    this.persist({ ...this.state, petItemId: itemId });
+  }
+
+  /**
+   * Botón de "refresh" del MVP: agrega moneda de prueba sin tocar
+   * inventario ni mascota. Pensado solo para poder probar tiradas
+   * repetidas sin quedarte sin saldo.
+   */
+  addTestCurrency(amount = 10000): void {
+    this.persist({ ...this.state, currency: this.state.currency + amount });
+  }
+
   private loadInitialState(): GachaState {
     return {
       currency: this.loadCurrency(),
       inventory: this.loadInventory(),
+      petItemId: localStorage.getItem(this.PET_STORAGE_KEY),
     };
   }
 
@@ -143,6 +216,11 @@ export class GachaService {
   private persist(next: GachaState): void {
     localStorage.setItem(this.CURRENCY_STORAGE_KEY, String(next.currency));
     localStorage.setItem(this.INVENTORY_STORAGE_KEY, JSON.stringify(next.inventory));
+    if (next.petItemId) {
+      localStorage.setItem(this.PET_STORAGE_KEY, next.petItemId);
+    } else {
+      localStorage.removeItem(this.PET_STORAGE_KEY);
+    }
     this.stateSubject.next(next);
   }
 }

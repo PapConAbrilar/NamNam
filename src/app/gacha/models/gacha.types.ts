@@ -7,6 +7,8 @@ export interface CollectionItemDef {
   name: string;
   emoji: string;
   rarity: Rarity;
+  /** Solo presente en ítems compuestos (Épico/Legendario) crafteables. */
+  recipe?: { itemId: string; quantity: number }[];
 }
 
 export interface OwnedItem {

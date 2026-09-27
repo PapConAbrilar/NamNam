@@ -2,9 +2,9 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonBadge, IonButton, IonIcon, ToastController } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { diceOutline, sparklesOutline } from 'ionicons/icons';
+import { diceOutline, paw, refreshOutline, sparklesOutline } from 'ionicons/icons';
 import { Subscription } from 'rxjs';
-import { CATALOG } from '../../data/catalog';
+import { CATALOG, getItemDef } from '../../data/catalog';
 import { RARITY_CONFIG, costFor } from '../../data/rarity-config';
 import { Inventory } from '../../models/gacha.types';
 import { GachaService, PullOutcome } from '../../services/gacha.service';
@@ -24,6 +24,7 @@ export class GachaCollectionComponent implements OnInit, OnDestroy {
 
   currency = 0;
   inventory: Inventory = {};
+  petItemId: string | null = null;
 
   private sub?: Subscription;
 
@@ -31,13 +32,14 @@ export class GachaCollectionComponent implements OnInit, OnDestroy {
     private gacha: GachaService,
     private toastCtrl: ToastController,
   ) {
-    addIcons({ diceOutline, sparklesOutline });
+    addIcons({ diceOutline, sparklesOutline, refreshOutline, paw });
   }
 
   ngOnInit(): void {
     this.sub = this.gacha.state$.subscribe((state) => {
       this.currency = state.currency;
       this.inventory = state.inventory;
+      this.petItemId = state.petItemId;
     });
   }
 
@@ -47,6 +49,18 @@ export class GachaCollectionComponent implements OnInit, OnDestroy {
 
   ownedFor(itemId: string) {
     return this.inventory[itemId];
+  }
+
+  hasRecipe(itemId: string): boolean {
+    return !!getItemDef(itemId)?.recipe;
+  }
+
+  get petDef() {
+    return this.petItemId ? getItemDef(this.petItemId) : undefined;
+  }
+
+  get petRank(): number {
+    return this.petItemId ? (this.inventory[this.petItemId]?.rank ?? 0) : 0;
   }
 
   async onSingleTap(): Promise<void> {
@@ -59,18 +73,45 @@ export class GachaCollectionComponent implements OnInit, OnDestroy {
     await this.showPullResult(outcome);
   }
 
-  /** Tap sobre un ítem desbloqueado: intenta mergear directo (sin confirmación, sin animación). */
+  /** Tap sobre la carta (solo funciona si ya posees el ítem): intenta mergear directo. */
   async onItemTap(itemId: string): Promise<void> {
     const owned = this.ownedFor(itemId);
     if (!owned) return;
 
     const outcome = this.gacha.mergeItem(itemId);
+    const def = this.catalog.find((c) => c.id === itemId);
     if (outcome.success) {
-      const def = this.catalog.find((c) => c.id === itemId);
       await this.showToast(`${def?.emoji ?? ''} ${def?.name ?? 'Ítem'} ahora es +${outcome.newRank}!`, 'success');
     } else {
       await this.showToast(outcome.message ?? 'No se pudo mergear este ítem.', 'medium');
     }
+  }
+
+  /**
+   * Botón dedicado (🛠️): intenta craftear. Funciona sin importar si ya
+   * posees el ítem o no — cada craft exitoso agrega una copia más
+   * (útil si ya tienes 1 y quieres una segunda para mergear, por ejemplo).
+   */
+  async onCraftTap(event: Event, itemId: string): Promise<void> {
+    event.stopPropagation();
+    const outcome = this.gacha.craft(itemId);
+    const def = this.catalog.find((c) => c.id === itemId);
+    if (outcome.success) {
+      await this.showToast(`¡Crafteaste ${def?.emoji ?? ''} ${def?.name ?? 'un ítem'}!`, 'success');
+    } else {
+      await this.showToast(outcome.message ?? 'No se pudo craftear.', 'medium');
+    }
+  }
+
+  /** Botón dedicado (⭐) para fijar un ítem como mascota, sin interferir con el tap de merge. */
+  onSetPet(event: Event, itemId: string): void {
+    event.stopPropagation();
+    this.gacha.selectPet(itemId);
+  }
+
+  async onRefreshTap(): Promise<void> {
+    this.gacha.addTestCurrency(10000);
+    await this.showToast('+10.000🪙 agregados', 'success');
   }
 
   private async showPullResult(outcome: PullOutcome): Promise<void> {

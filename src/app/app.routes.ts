@@ -1,7 +1,6 @@
 import { Routes } from '@angular/router';
 
 export const routes: Routes = [
-  { path: 'gacha-test', loadComponent: () => import('./_gacha-test.component').then((m) => m.GachaTestComponent), },
   {
     path: '',
     redirectTo: 'login',
@@ -14,6 +13,10 @@ export const routes: Routes = [
   {
     path: 'onboarding',
     loadComponent: () => import('./pages/onboarding/onboarding.page').then((m) => m.OnboardingPage),
+  },
+  {
+    path: 'gacha',
+    loadComponent: () => import('./gacha/pages/gacha-page/gacha.page').then((m) => m.GachaPage),
   },
   {
     path: '',
