@@ -20,6 +20,8 @@ create table public.profiles (
   activity_level           text check (activity_level in ('sedentary', 'light', 'moderate', 'active')),
   goal                     text check (goal in ('lose', 'maintain', 'gain')),
   has_completed_onboarding boolean not null default false,
+  gacha_currency           integer not null default 1000 check (gacha_currency >= 0),
+  pet_item_id              text,
   created_at               timestamptz not null default now()
 );
 
@@ -236,26 +238,40 @@ revoke all on function public.open_weekly_reward(date) from public, anon;
 grant execute on function public.open_weekly_reward(date) to authenticated;
 
 -- ---------------------------------------------------------------------
--- 8. Row Level Security
+-- 8. Inventario del Gacha y Mascota
 -- ---------------------------------------------------------------------
-alter table public.profiles          enable row level security;
-alter table public.nutrition_goals   enable row level security;
-alter table public.meals             enable row level security;
-alter table public.activities        enable row level security;
-alter table public.weight_logs       enable row level security;
-alter table public.water_logs        enable row level security;
-alter table public.collectibles      enable row level security;
-alter table public.user_collectibles enable row level security;
-alter table public.reward_claims     enable row level security;
+create table public.user_gacha_inventory (
+  user_id           uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  item_id           text not null references public.collectibles (id) on delete cascade,
+  rank              smallint not null default 0 check (rank >= 0),
+  base_copies_held  integer not null default 1 check (base_copies_held >= 0),
+  first_obtained_at timestamptz not null default now(),
+  primary key (user_id, item_id)
+);
+
+-- ---------------------------------------------------------------------
+-- 9. Row Level Security
+-- ---------------------------------------------------------------------
+alter table public.profiles             enable row level security;
+alter table public.nutrition_goals      enable row level security;
+alter table public.meals                enable row level security;
+alter table public.activities           enable row level security;
+alter table public.weight_logs          enable row level security;
+alter table public.water_logs           enable row level security;
+alter table public.collectibles         enable row level security;
+alter table public.user_collectibles    enable row level security;
+alter table public.reward_claims        enable row level security;
+alter table public.user_gacha_inventory enable row level security;
 
 create policy "profiles: leer propio"       on public.profiles for select using (id = auth.uid());
 create policy "profiles: actualizar propio" on public.profiles for update using (id = auth.uid()) with check (id = auth.uid());
 
-create policy "nutrition_goals: propio" on public.nutrition_goals for all using (user_id = auth.uid()) with check (user_id = auth.uid());
-create policy "meals: propio"           on public.meals           for all using (user_id = auth.uid()) with check (user_id = auth.uid());
-create policy "activities: propio"      on public.activities      for all using (user_id = auth.uid()) with check (user_id = auth.uid());
-create policy "weight_logs: propio"     on public.weight_logs     for all using (user_id = auth.uid()) with check (user_id = auth.uid());
-create policy "water_logs: propio"      on public.water_logs      for all using (user_id = auth.uid()) with check (user_id = auth.uid());
+create policy "nutrition_goals: propio"      on public.nutrition_goals      for all using (user_id = auth.uid()) with check (user_id = auth.uid());
+create policy "meals: propio"                on public.meals                for all using (user_id = auth.uid()) with check (user_id = auth.uid());
+create policy "activities: propio"           on public.activities           for all using (user_id = auth.uid()) with check (user_id = auth.uid());
+create policy "weight_logs: propio"          on public.weight_logs          for all using (user_id = auth.uid()) with check (user_id = auth.uid());
+create policy "water_logs: propio"           on public.water_logs           for all using (user_id = auth.uid()) with check (user_id = auth.uid());
+create policy "user_gacha_inventory: propio" on public.user_gacha_inventory for all using (user_id = auth.uid()) with check (user_id = auth.uid());
 
 -- El catálogo es público para usuarios autenticados; desbloqueos y reclamos solo se leen
 -- (se escriben únicamente mediante open_weekly_reward).
@@ -264,7 +280,7 @@ create policy "user_collectibles: leer propio" on public.user_collectibles for s
 create policy "reward_claims: leer propio"     on public.reward_claims     for select using (user_id = auth.uid());
 
 -- ---------------------------------------------------------------------
--- 9. Storage para fotos de comidas (carpeta por usuario: <user_id>/<archivo>)
+-- 10. Storage para fotos de comidas (carpeta por usuario: <user_id>/<archivo>)
 -- ---------------------------------------------------------------------
 insert into storage.buckets (id, name, public) values ('meal-photos', 'meal-photos', false)
 on conflict (id) do nothing;
@@ -274,16 +290,40 @@ create policy "meal-photos: propio" on storage.objects for all to authenticated
   with check (bucket_id = 'meal-photos' and (storage.foldername(name))[1] = auth.uid()::text);
 
 -- ---------------------------------------------------------------------
--- 10. Datos iniciales del catálogo
+-- 11. Datos iniciales del catálogo (19 Alimentos del Gacha + Anteriores)
 -- ---------------------------------------------------------------------
 insert into public.collectibles (id, name, emoji, rarity, sort_order) values
-  ('pizza-clasica',    'Pizza Clásica',    '🍕', 'common',    1),
-  ('manzana-roja',     'Manzana Roja',     '🍎', 'common',    2),
-  ('aguacate-mistico', 'Aguacate Místico', '🥑', 'rare',      3),
-  ('sushi-epico',      'Sushi Épico',      '🍣', 'epic',      4),
-  ('taco-galactico',   'Taco Galáctico',   '🌮', 'rare',      5),
-  ('pastel-dorado',    'Pastel Dorado',    '🍰', 'legendary', 6),
-  ('langosta-real',    'Langosta Real',    '🦞', 'epic',      7),
-  ('uvas-arcanas',     'Uvas Arcanas',     '🍇', 'rare',      8),
-  ('croissant-magico', 'Croissant Mágico', '🥐', 'common',    9)
+  -- Común
+  ('tomato',           'Tomate',           '🍅', 'common',    1),
+  ('apple',            'Manzana',          '🍎', 'common',    2),
+  ('egg',              'Huevo',            '🥚', 'common',    3),
+  ('lettuce',          'Lechuga',          '🥬', 'common',    4),
+  ('rice',             'Arroz',            '🍚', 'common',    5),
+  ('carrot',           'Zanahoria',        '🥕', 'common',    6),
+  ('fish',             'Pescado',          '🐟', 'common',    7),
+  ('grape',            'Uva',              '🍇', 'common',    8),
+  -- Raro
+  ('cheese',           'Queso',            '🧀', 'rare',      9),
+  ('salt',             'Sal',              '🧂', 'rare',     10),
+  ('honey',            'Miel',             '🍯', 'rare',     11),
+  ('bread',            'Pan',              '🍞', 'rare',     12),
+  ('butter',           'Mantequilla',      '🧈', 'rare',     13),
+  ('olive',            'Aceituna',         '🫒', 'rare',     14),
+  -- Épico
+  ('pizza',            'Pizza',            '🍕', 'epic',     15),
+  ('sushi',            'Sushi',            '🍣', 'epic',     16),
+  ('taco',             'Taco',             '🌮', 'epic',     17),
+  -- Legendario
+  ('golden_cake',      'Pastel Dorado',    '🎂', 'legendary', 18),
+  ('ramen',            'Ramen Supremo',    '🍜', 'legendary', 19),
+  -- Coleccionables clásicos
+  ('pizza-clasica',    'Pizza Clásica',    '🍕', 'common',   20),
+  ('manzana-roja',     'Manzana Roja',     '🍎', 'common',   21),
+  ('aguacate-mistico', 'Aguacate Místico', '🥑', 'rare',     22),
+  ('sushi-epico',      'Sushi Épico',      '🍣', 'epic',     23),
+  ('taco-galactico',   'Taco Galáctico',   '🌮', 'rare',     24),
+  ('pastel-dorado',    'Pastel Dorado',    '🍰', 'legendary', 25),
+  ('langosta-real',    'Langosta Real',    '🦞', 'epic',     26),
+  ('uvas-arcanas',     'Uvas Arcanas',     '🍇', 'rare',     27),
+  ('croissant-magico', 'Croissant Mágico', '🥐', 'common',   28)
 on conflict (id) do nothing;

@@ -291,5 +291,30 @@ Para mantener el orden, la trazabilidad del código y evitar conflictos entre lo
   * **Modelos y Datos:** `src/app/gacha/models/gacha.types.ts`, `src/app/gacha/data/catalog.ts` (catálogo y recetas), `src/app/gacha/data/rarity-config.ts` (probabilidades y costos).
   * **Integración en Tab 3:** inyección de `GachaService` en `src/app/tab3/tab3.page.ts` y llamada a `addCurrency(50)` en `confirmMeal()`.
 
+#### 9. Route Guards de Autenticación, Conexión Dinámica de Tab 1 e Integración Completa con Supabase
+* **Estado:** 🟡 En Revisión
+* **Fecha:** 2026-09-27
+* **Autor / Responsable:** Antigravity AI & Benjamín Pinto
+* **¿Qué hace?**:
+  * **Seguridad de Rutas (`authGuard`, `onboardingGuard`):** Protege el acceso a `/tabs` y `/gacha` exigiendo sesión activa. Si no hay sesión redirige a `/login`; si no se ha completado el onboarding redirige a `/onboarding`. Protege `/onboarding` impidiendo acceso si ya fue completado.
+  * **Dashboard Dinámico en Tiempo Real (Tab 1):** Conecta el anillo de calorías restantes, calorías consumidas, objetivo y desglose de macronutrientes a datos reales calculados desde `DiaryService` y `GoalService`. Muestra la lista de comidas registradas hoy con actualización automática al entrar a la tab y soporte para `ion-refresher`.
+  * **Integración Completa con Supabase:**
+    * **Autenticación y Perfil:** Conecta `AuthService` con `supabase.auth`, guardando biometría, metas y estado de onboarding en `profiles` y `nutrition_goals`.
+    * **Gamificación y Monedas:** Sincroniza saldo de monedas (`gacha_currency`) y mascota seleccionada (`pet_item_id`) en `profiles`, y el inventario de ítems obtenidos, niveles de fusión y copias en `public.user_gacha_inventory`.
+    * **Catálogo de 19 Alimentos del Gacha:** Se registraron todos los ítems del Gacha con sus emojis, nombres y rarezas en `public.collectibles` de `supabase/schema.sql` y en el repositorio local.
+    * **Recompensas en el flujo:** Al registrar una comida en `DiaryService`, se premia al usuario otorgando automáticamente monedas en su billetera de Supabase.
+  * **Ajuste de Budgets:** Modifica presupuestos de compilación en `angular.json` para permitir estilos completos de componentes sin errores de build.
+* **¿Cómo lo hace?**:
+  * **Guards:** `src/app/guards/auth.guard.ts` (`authGuard`, `onboardingGuard`) con soporte para esperar la restauración asíncrona de sesión (`waitForSession()`).
+  * **Rutas:** `src/app/app.routes.ts`, `src/app/tabs/tabs.routes.ts`.
+  * **Servicios:** 
+    * `src/app/services/auth.service.ts` (sesión, login, registro y sincronización con Supabase Auth).
+    * `src/app/services/diary.service.ts` (`getTodaySummary()` y recompensas de monedas).
+    * `src/app/gacha/services/gacha.service.ts` (sincronización bidireccional de monedas e inventario con `profiles` y `user_gacha_inventory`).
+    * `src/app/services/data/mock-collection.repository.ts` (catálogo sincronizado con los 19 ítems).
+  * **Vistas:** `src/app/tab1/tab1.page.ts`, `tab1.page.html`.
+  * **Base de Datos:** `supabase/schema.sql` con definición de tablas `profiles`, `nutrition_goals`, `meals`, `activities`, `collectibles` (con los 19 ítems del catálogo), `user_collectibles`, `user_gacha_inventory`, `reward_claims`, políticas RLS y función `open_weekly_reward`.
+
+
 
 

@@ -19,112 +19,111 @@
 </ion-header>
 
 <ion-content class="home-page" fullscreen>
+  <ion-refresher slot="fixed" (ionRefresh)="refresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
   <div class="dashboard-shell">
-
-    <section class="summary-card" slot="middle">
-      <div class="ring-progress" style="--progress: 62%;">
-        <div class="ring-inner">
-          <strong>600</strong>
-          <span>restantes</span>
-          <small>de 1850 kcal</small>
-        </div>
+    @if (loading()) {
+      <div style="display: flex; justify-content: center; padding: 48px 0;">
+        <ion-spinner name="crescent"></ion-spinner>
       </div>
-
-      <div class="summary-stats">
-        <div class="stat">
-          <span class="value">1,250</span>
-          <span class="label">Consumidas</span>
-        </div>
-
-        <div class="stat">
-          <span class="value">1,850</span>
-          <span class="label">Objetivo</span>
-        </div>
-
-        <div class="stat">
-          <span class="value">340</span>
-          <span class="label">Quemadas</span>
-        </div>
-      </div>
-    </section>
-
-    <section class="macro-card">
-      <div class="section-header">
-        <h3>Macronutrientes</h3>
-        <span>de hoy</span>
-      </div>
-
-      <div class="macro-row">
-        <div class="macro-label">
-          <span>Proteínas</span>
-        </div>
-        <div class="macro-bar blue">
-          <span class="fill" style="width: 62%"></span>
-        </div>
-        <div class="macro-value">98g</div>
-      </div>
-
-      <div class="macro-row">
-        <div class="macro-label">
-          <span>Carbohidratos</span>
-        </div>
-        <div class="macro-bar yellow">
-          <span class="fill" style="width: 70%"></span>
-        </div>
-        <div class="macro-value">180g</div>
-      </div>
-
-      <div class="macro-row">
-        <div class="macro-label">
-          <span>Grasas</span>
-        </div>
-        <div class="macro-bar red">
-          <span class="fill" style="width: 55%"></span>
-        </div>
-        <div class="macro-value">45g</div>
-      </div>
-    </section>
-
-    <section class="meal-card">
-      <div class="section-header">
-        <h3>Comidas de Hoy</h3>
-        <a href="#">Ver todo</a>
-      </div>
-
-      <div class="meal-item">
-        <div class="meal-main">
-          <span class="meal-icon breakfast"></span>
-          <div>
-            <strong>Desayuno</strong>
-            <small>Avena, platano, leche</small>
+    } @else {
+      <!-- Tarjeta de Anillo Calórico -->
+      <section class="summary-card" slot="middle">
+        <div class="ring-progress" [style.--progress]="progressPct + '%'">
+          <div class="ring-inner">
+            <strong>{{ remainingKcal }}</strong>
+            <span>restantes</span>
+            <small>de {{ targetKcal() }} kcal</small>
           </div>
         </div>
-        <span class="meal-kcal">420 kcal</span>
-      </div>
 
-      <div class="meal-item">
-        <div class="meal-main">
-          <span class="meal-icon lunch"></span>
-          <div>
-            <strong>Almuerzo</strong>
-            <small>Arroz, pollo, ensalada</small>
+        <div class="summary-stats">
+          <div class="stat">
+            <span class="value">{{ consumedKcal() }}</span>
+            <span class="label">Consumidas</span>
+          </div>
+
+          <div class="stat">
+            <span class="value">{{ targetKcal() }}</span>
+            <span class="label">Objetivo</span>
+          </div>
+
+          <div class="stat">
+            <span class="value">{{ progressPct }}%</span>
+            <span class="label">Progreso</span>
           </div>
         </div>
-        <span class="meal-kcal">650 kcal</span>
-      </div>
+      </section>
 
-      <div class="meal-item">
-        <div class="meal-main">
-          <span class="meal-icon snack"></span>
-          <div>
-            <strong>Snack</strong>
-            <small>Manzana, nueces</small>
-          </div>
+      <!-- Macronutrientes -->
+      <section class="macro-card">
+        <div class="section-header">
+          <h3>Macronutrientes</h3>
+          <span>de hoy</span>
         </div>
-        <span class="meal-kcal">180 kcal</span>
-      </div>
-    </section>
 
+        <div class="macro-row">
+          <div class="macro-label">
+            <span>Proteínas</span>
+          </div>
+          <div class="macro-bar blue">
+            <span class="fill" [style.width.%]="proteinPct"></span>
+          </div>
+          <div class="macro-value">{{ consumedProtein() }}g / {{ targetProtein() }}g</div>
+        </div>
+
+        <div class="macro-row">
+          <div class="macro-label">
+            <span>Carbohidratos</span>
+          </div>
+          <div class="macro-bar yellow">
+            <span class="fill" [style.width.%]="carbsPct"></span>
+          </div>
+          <div class="macro-value">{{ consumedCarbs() }}g / {{ targetCarbs() }}g</div>
+        </div>
+
+        <div class="macro-row">
+          <div class="macro-label">
+            <span>Grasas</span>
+          </div>
+          <div class="macro-bar red">
+            <span class="fill" [style.width.%]="fatPct"></span>
+          </div>
+          <div class="macro-value">{{ consumedFat() }}g / {{ targetFat() }}g</div>
+        </div>
+      </section>
+
+      <!-- Comidas de Hoy -->
+      <section class="meal-card">
+        <div class="section-header">
+          <h3>Comidas de Hoy</h3>
+          <a routerLink="/tabs/tab2">Ver historial</a>
+        </div>
+
+        @if (meals().length === 0) {
+          <div style="text-align: center; padding: 24px 0; color: #94a3b8;">
+            <p style="margin: 0; font-size: 0.9rem;">Aún no registras comidas hoy.</p>
+            <p style="margin: 6px 0 0; font-size: 0.8rem;">¡Toma una foto en la pestaña Cámara para empezar! 📸</p>
+          </div>
+        } @else {
+          @for (meal of meals(); track meal.id) {
+            <div class="meal-item">
+              <div class="meal-main">
+                <span class="meal-icon" style="display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+                  {{ getMealEmoji(meal.mealType) }}
+                </span>
+                <div>
+                  <strong>{{ meal.name }}</strong>
+                  <small>{{ getMealLabel(meal.mealType) }} · {{ meal.consumedAt | date:'shortTime' }}</small>
+                </div>
+              </div>
+              <span class="meal-kcal">{{ meal.kcal }} kcal</span>
+            </div>
+          }
+        }
+      </section>
+    }
   </div>
 </ion-content>
-

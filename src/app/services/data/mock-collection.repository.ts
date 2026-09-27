@@ -4,15 +4,36 @@ import { CollectionRepository } from './collection.repository';
 import { pickWeightedCollectible } from './reward-draw';
 
 const CATALOG: Collectible[] = [
-  { id: 'pizza-clasica', name: 'Pizza Clásica', emoji: '🍕', rarity: 'common', sortOrder: 1 },
-  { id: 'manzana-roja', name: 'Manzana Roja', emoji: '🍎', rarity: 'common', sortOrder: 2 },
-  { id: 'aguacate-mistico', name: 'Aguacate Místico', emoji: '🥑', rarity: 'rare', sortOrder: 3 },
-  { id: 'sushi-epico', name: 'Sushi Épico', emoji: '🍣', rarity: 'epic', sortOrder: 4 },
-  { id: 'taco-galactico', name: 'Taco Galáctico', emoji: '🌮', rarity: 'rare', sortOrder: 5 },
-  { id: 'pastel-dorado', name: 'Pastel Dorado', emoji: '🍰', rarity: 'legendary', sortOrder: 6 },
-  { id: 'langosta-real', name: 'Langosta Real', emoji: '🦞', rarity: 'epic', sortOrder: 7 },
-  { id: 'uvas-arcanas', name: 'Uvas Arcanas', emoji: '🍇', rarity: 'rare', sortOrder: 8 },
-  { id: 'croissant-magico', name: 'Croissant Mágico', emoji: '🥐', rarity: 'common', sortOrder: 9 },
+  // Gacha catálogo (19 alimentos)
+  { id: 'tomato', name: 'Tomate', emoji: '🍅', rarity: 'common', sortOrder: 1 },
+  { id: 'apple', name: 'Manzana', emoji: '🍎', rarity: 'common', sortOrder: 2 },
+  { id: 'egg', name: 'Huevo', emoji: '🥚', rarity: 'common', sortOrder: 3 },
+  { id: 'lettuce', name: 'Lechuga', emoji: '🥬', rarity: 'common', sortOrder: 4 },
+  { id: 'rice', name: 'Arroz', emoji: '🍚', rarity: 'common', sortOrder: 5 },
+  { id: 'carrot', name: 'Zanahoria', emoji: '🥕', rarity: 'common', sortOrder: 6 },
+  { id: 'fish', name: 'Pescado', emoji: '🐟', rarity: 'common', sortOrder: 7 },
+  { id: 'grape', name: 'Uva', emoji: '🍇', rarity: 'common', sortOrder: 8 },
+  { id: 'cheese', name: 'Queso', emoji: '🧀', rarity: 'rare', sortOrder: 9 },
+  { id: 'salt', name: 'Sal', emoji: '🧂', rarity: 'rare', sortOrder: 10 },
+  { id: 'honey', name: 'Miel', emoji: '🍯', rarity: 'rare', sortOrder: 11 },
+  { id: 'bread', name: 'Pan', emoji: '🍞', rarity: 'rare', sortOrder: 12 },
+  { id: 'butter', name: 'Mantequilla', emoji: '🧈', rarity: 'rare', sortOrder: 13 },
+  { id: 'olive', name: 'Aceituna', emoji: '🫒', rarity: 'rare', sortOrder: 14 },
+  { id: 'pizza', name: 'Pizza', emoji: '🍕', rarity: 'epic', sortOrder: 15 },
+  { id: 'sushi', name: 'Sushi', emoji: '🍣', rarity: 'epic', sortOrder: 16 },
+  { id: 'taco', name: 'Taco', emoji: '🌮', rarity: 'epic', sortOrder: 17 },
+  { id: 'golden_cake', name: 'Pastel Dorado', emoji: '🎂', rarity: 'legendary', sortOrder: 18 },
+  { id: 'ramen', name: 'Ramen Supremo', emoji: '🍜', rarity: 'legendary', sortOrder: 19 },
+  // Coleccionables clásicos
+  { id: 'pizza-clasica', name: 'Pizza Clásica', emoji: '🍕', rarity: 'common', sortOrder: 20 },
+  { id: 'manzana-roja', name: 'Manzana Roja', emoji: '🍎', rarity: 'common', sortOrder: 21 },
+  { id: 'aguacate-mistico', name: 'Aguacate Místico', emoji: '🥑', rarity: 'rare', sortOrder: 22 },
+  { id: 'sushi-epico', name: 'Sushi Épico', emoji: '🍣', rarity: 'epic', sortOrder: 23 },
+  { id: 'taco-galactico', name: 'Taco Galáctico', emoji: '🌮', rarity: 'rare', sortOrder: 24 },
+  { id: 'pastel-dorado', name: 'Pastel Dorado', emoji: '🍰', rarity: 'legendary', sortOrder: 25 },
+  { id: 'langosta-real', name: 'Langosta Real', emoji: '🦞', rarity: 'epic', sortOrder: 26 },
+  { id: 'uvas-arcanas', name: 'Uvas Arcanas', emoji: '🍇', rarity: 'rare', sortOrder: 27 },
+  { id: 'croissant-magico', name: 'Croissant Mágico', emoji: '🥐', rarity: 'common', sortOrder: 28 },
 ];
 
 const STORAGE_KEY = 'namnam_mock_collection';
