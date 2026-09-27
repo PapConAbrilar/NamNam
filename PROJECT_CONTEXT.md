@@ -270,4 +270,26 @@ Para mantener el orden, la trazabilidad del código y evitar conflictos entre lo
   * **Modelos:** `src/app/models/food-recognition.model.ts` (`FoodRecognitionResult`, `DetectedFoodItem`).
   * **Dependencias:** `@capacitor/camera` y WebRTC `navigator.mediaDevices.getUserMedia` para soporte nativo y web.
 
+#### 8. Sistema de Gamificación Gacha, Colección Interactiva y Crafteo
+* **Estado:** � Completada (Validada por Benjamín Pinto)
+* **Fecha:** 2026-09-27
+* **Autor / Responsable:** Sebastián Bünzli, Antigravity AI & Benjamín Pinto
+* **¿Qué hace?**:
+  * Implementa un sistema de gamificación completo con tiradas de Gacha (tirada simple 100🪙 / tirada x5 500🪙) basadas en probabilidades ponderadas por rareza (Común 60%, Raro 30%, Épico 8%, Legendario 2%).
+  * Catálogo de 19 alimentos coleccionables con emojis, rarezas, rangos (+1, +2...) y estado de posesión bloqueado/desbloqueado.
+  * Sistema de crafteo mediante el cual los usuarios pueden combinar ingredientes coleccionados para crear nuevos platos especiales (recetas culinarias).
+  * Sistema de fusión (*merge*) para subir de rango los duplicados obtenidos y botón de selección de mascota/acompañante favorito (⭐).
+  * Integración transversal en el flujo de la aplicación:
+    * Otorga automáticamente +50🪙 de recompensa al registrar exitosamente una comida con la cámara IA en Tab 3.
+    * Otorga +500🪙 al completar y abrir el reto semanal en Tab 5.
+  * Embebido directamente en la **Tab 5 (Colección)** con estilos adaptados al modo oscuro de ÑamÑam, y disponible adicionalmente en la ruta `/gacha`.
+* **¿Cómo lo hace?**:
+  * **Componentes / Vistas:** `src/app/gacha/components/gacha-collection/` (`gacha-collection.component.ts`, `.html`, `.scss`), `src/app/gacha/pages/gacha-page/`, integrado dentro de `src/app/tab5/tab5.page.html` y `tab5.page.ts`.
+  * **Servicios / Lógica:** 
+    * `src/app/gacha/services/gacha.service.ts`: servicio centralizado con estado reactivo (`BehaviorSubject`), persistencia en `localStorage`, métodos `pull`, `mergeItem`, `craft`, `selectPet` y `addCurrency`.
+    * `src/app/gacha/engine/gacha-engine.ts`: motor aleatorio ponderado para selección de rarezas e ítems.
+  * **Modelos y Datos:** `src/app/gacha/models/gacha.types.ts`, `src/app/gacha/data/catalog.ts` (catálogo y recetas), `src/app/gacha/data/rarity-config.ts` (probabilidades y costos).
+  * **Integración en Tab 3:** inyección de `GachaService` en `src/app/tab3/tab3.page.ts` y llamada a `addCurrency(50)` en `confirmMeal()`.
+
+
 
