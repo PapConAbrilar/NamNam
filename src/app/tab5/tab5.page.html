@@ -34,14 +34,14 @@
     } @else {
       <section class="hero-card">
         <header class="hero-heading">
-          <h1>Colección ÑamÑam</h1>
-          <p>{{ unlockedCount() }}/{{ items().length }} desbloqueados</p>
+          <h1>Colección & Gacha 🎰</h1>
+          <p>Tira de la máquina, craftea recetas y sube de rango tus platos</p>
         </header>
 
         @if (reward(); as r) {
           <div class="gacha-box">
             <div class="gacha-head">
-              <strong>Próximo Tiro Gacha</strong>
+              <strong>Reto Semanal de Registro</strong>
               <span class="gacha-pct">{{ r.progressPct }}%</span>
             </div>
             <div class="progress-track">
@@ -52,7 +52,7 @@
               @if (opening()) {
                 <ion-spinner name="dots"></ion-spinner>
               } @else {
-                Abrir Recompensa Semanal
+                Abrir Recompensa Semanal (+500 🪙)
               }
             </ion-button>
 
@@ -60,7 +60,7 @@
               @if (r.alreadyClaimed) {
                 Ya abriste la recompensa de esta semana. ¡Vuelve el lunes!
               } @else if (r.canClaim) {
-                ¡Completaste la semana! Tu recompensa está lista.
+                ¡Completaste la semana! Tu recompensa de +500 🪙 está lista.
               } @else {
                 Registra comidas {{ r.daysRequired }} días esta semana para desbloquearla ({{ r.daysLogged }}/{{ r.daysRequired }}).
               }
@@ -69,19 +69,8 @@
         }
       </section>
 
-      <div class="collection-grid">
-        @for (item of items(); track item.id) {
-          <section class="collectible-card" [class.locked]="!item.unlocked">
-            <div class="collectible-icon" [class]="item.rarity">
-              <span class="emoji">{{ item.emoji }}</span>
-              @if (!item.unlocked) {
-              }
-            </div>
-            <strong class="collectible-name">{{ item.name }}</strong>
-            <span class="rarity-badge" [class]="item.rarity">{{ rarityLabels[item.rarity] }}</span>
-          </section>
-        }
-      </div>
+      <!-- Máquina Gacha interactiva, inventario, crafteo y fusión -->
+      <app-gacha-collection></app-gacha-collection>
     }
   </div>
 </ion-content>

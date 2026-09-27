@@ -39,6 +39,7 @@ import { LogoutButtonComponent } from '../components/logout-button/logout-button
 import { FoodRecognitionResult } from '../models/food-recognition.model';
 import { MealType } from '../models/nutrition.model';
 import { toISODate } from '../utils/date.utils';
+import { GachaService } from '../gacha/services/gacha.service';
 
 @Component({
   selector: 'app-tab3',
@@ -69,6 +70,7 @@ export class Tab3Page {
   public authService = inject(AuthService);
   private geminiService = inject(GeminiService);
   private diaryService = inject(DiaryService);
+  private gachaService = inject(GachaService);
   private toastCtrl = inject(ToastController);
   private alertCtrl = inject(AlertController);
   private router = inject(Router);
@@ -321,8 +323,11 @@ export class Tab3Page {
         photoPath: this.previewImage,
       });
 
+      // Recompensa al usuario con monedas de Gacha por registrar su comida
+      this.gachaService.addCurrency(50);
+
       const toast = await this.toastCtrl.create({
-        message: '¡Comida registrada en tu diario con éxito! 🥗',
+        message: '¡Comida registrada con éxito! 🥗 (+50 🪙 de recompensa)',
         duration: 2500,
         color: 'success',
         position: 'top',

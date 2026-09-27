@@ -1,36 +1,43 @@
+@use '../../../../theme/namnam' as nn;
+
 .gacha-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 4px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  background: nn.$card-bg;
+  border: 1px solid nn.$card-border;
+  border-radius: 18px;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 12px;
 }
 
 .gacha-currency {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-weight: 700;
-  font-size: 15px;
-  color: var(--ion-color-dark, #1e293b);
+  gap: 8px;
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: nn.$text;
 
   ion-icon {
-    color: #84cc16;
-    font-size: 18px;
+    color: nn.$lime;
+    font-size: 22px;
   }
 }
 
 .gacha-refresh-btn {
   border: none;
-  background: transparent;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4px;
-  margin-left: 2px;
+  padding: 6px;
+  margin-left: 4px;
   cursor: pointer;
-  color: var(--ion-color-medium, #64748b);
+  color: nn.$text-muted;
 
   ion-icon {
     font-size: 16px;
@@ -53,9 +60,9 @@
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: var(--ion-color-light, #f8fafc);
-  border: 2px solid var(--ion-color-step-150, #e2e8f0);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  background: nn.$card-bg;
+  border: 2px solid nn.$lime;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .gacha-pet-emoji {
@@ -67,73 +74,92 @@
   bottom: -4px;
   right: -4px;
   font-size: 9px;
+  --background: #111;
+  color: nn.$lime;
 }
 
 .gacha-actions {
   display: flex;
   gap: 8px;
+
+  ion-button {
+    --border-radius: 12px;
+    font-weight: 700;
+  }
 }
 
 .gacha-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  padding: 8px 4px 24px;
+  gap: 12px;
+  padding: 0 0 24px;
 }
 
 .gacha-item {
-  background: var(--ion-color-light, #f8fafc);
-  border-radius: 12px;
-  padding: 12px 6px;
+  background: nn.$card-bg;
+  border-radius: 16px;
+  padding: 14px 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   position: relative;
   cursor: pointer;
-  border: 1px solid var(--ion-color-step-150, #e2e8f0);
+  border: 1px solid nn.$card-border;
+  color: nn.$text;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+
+  &:active {
+    transform: scale(0.96);
+  }
 
   &.locked {
-    opacity: 0.6;
+    opacity: 0.45;
     cursor: default;
+
+    .gacha-item-emoji {
+      filter: blur(2px) grayscale(0.8);
+    }
   }
 
   &.craftable {
     opacity: 1;
     cursor: pointer;
-    border-color: #84cc16;
+    border-color: nn.$lime;
     border-style: dashed;
+    box-shadow: 0 0 10px rgba(132, 204, 22, 0.15);
   }
 }
 
 .gacha-pet-pin {
   position: absolute;
-  top: 4px;
-  left: 4px;
+  top: 6px;
+  left: 6px;
   border: none;
   background: transparent;
   padding: 2px;
   display: flex;
   cursor: pointer;
-  color: var(--ion-color-medium, #94a3b8);
+  color: nn.$text-muted;
 
   ion-icon {
-    font-size: 13px;
+    font-size: 14px;
   }
 
   &:active {
-    color: #84cc16;
+    color: nn.$lime;
   }
 }
 
 .gacha-craft-btn {
   position: absolute;
-  top: 18px;
-  right: 4px;
+  top: 6px;
+  right: 6px;
   border: none;
-  background: transparent;
-  padding: 0;
-  font-size: 13px;
+  background: rgba(132, 204, 22, 0.15);
+  border-radius: 6px;
+  padding: 2px 4px;
+  font-size: 12px;
   line-height: 1;
   cursor: pointer;
 
@@ -144,23 +170,28 @@
 
 .gacha-rank-badge {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  bottom: 6px;
+  right: 6px;
   font-size: 9px;
+  --background: rgba(132, 204, 22, 0.2);
+  --color: #a3e635;
 }
 
 .gacha-item-emoji {
-  font-size: 28px;
+  font-size: 32px;
+  margin: 4px 0;
 }
 
 .gacha-item-name {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   text-align: center;
-  color: var(--ion-color-dark, #0f172a);
+  color: nn.$text;
 }
 
 .gacha-item-rarity {
-  font-size: 8px;
-  font-weight: 700;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }

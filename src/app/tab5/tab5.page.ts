@@ -7,19 +7,32 @@ import { AuthService } from '../services/auth.service';
 import { LogoutButtonComponent } from '../components/logout-button/logout-button.component';
 import { CollectionService } from '../services/collection.service';
 import { CollectionItem, RARITY_LABELS, RewardStatus } from '../models/collection.model';
+import { GachaCollectionComponent } from '../gacha/components/gacha-collection/gacha-collection.component';
+import { GachaService } from '../gacha/services/gacha.service';
 
 @Component({
   selector: 'app-tab5',
   templateUrl: './tab5.page.html',
   styleUrls: ['./tab5.page.scss'],
   imports: [
-    IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonAvatar, IonButton, IonSpinner,
-    IonRefresher, IonRefresherContent, LogoutButtonComponent,
+    IonContent,
+    IonHeader,
+    IonTitle,
+    IonToolbar,
+    IonButtons,
+    IonAvatar,
+    IonButton,
+    IonSpinner,
+    IonRefresher,
+    IonRefresherContent,
+    LogoutButtonComponent,
+    GachaCollectionComponent,
   ],
 })
 export class Tab5Page {
   authService = inject(AuthService);
   private collectionService = inject(CollectionService);
+  private gachaService = inject(GachaService);
   private alertCtrl = inject(AlertController);
 
   items = signal<CollectionItem[]>([]);
@@ -62,11 +75,12 @@ export class Tab5Page {
     this.opening.set(true);
     try {
       const prize = await this.collectionService.openWeeklyReward(weekStart);
+      this.gachaService.addCurrency(500);
       await this.load();
       const alert = await this.alertCtrl.create({
         header: `${prize.emoji} ¡${prize.name}!`,
         subHeader: RARITY_LABELS[prize.rarity],
-        message: 'Nuevo coleccionable agregado a tu álbum.',
+        message: '¡Nuevo coleccionable y +500 🪙 para el Gacha agregados a tu cuenta!',
         buttons: ['¡Genial!'],
       });
       await alert.present();
