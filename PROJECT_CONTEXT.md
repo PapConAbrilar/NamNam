@@ -298,9 +298,10 @@ Para mantener el orden, la trazabilidad del código y evitar conflictos entre lo
 * **¿Qué hace?**:
   * **Seguridad de Rutas (`authGuard`, `onboardingGuard`):** Protege el acceso a `/tabs` y `/gacha` exigiendo sesión activa. Si no hay sesión redirige a `/login`; si no se ha completado el onboarding redirige a `/onboarding`. Protege `/onboarding` impidiendo acceso si ya fue completado.
   * **Dashboard Dinámico en Tiempo Real (Tab 1):** Conecta el anillo de calorías restantes, calorías consumidas, objetivo y desglose de macronutrientes a datos reales calculados desde `DiaryService` y `GoalService`. Muestra la lista de comidas registradas hoy con actualización automática al entrar a la tab y soporte para `ion-refresher`.
-  * **Integración Completa con Supabase:**
+  * **Integración Completa con Supabase y Aislamiento por Usuario:**
     * **Autenticación y Perfil:** Conecta `AuthService` con `supabase.auth`, guardando biometría, metas y estado de onboarding en `profiles` y `nutrition_goals`.
     * **Gamificación y Monedas:** Sincroniza saldo de monedas (`gacha_currency`) y mascota seleccionada (`pet_item_id`) en `profiles`, y el inventario de ítems obtenidos, niveles de fusión y copias en `public.user_gacha_inventory`.
+    * **Aislamiento Estricto por Usuario:** Particionado de claves de almacenamiento (`namnam_gacha_*_<userId>`) y reseteo reactivo inmediato al cerrar sesión o cambiar de cuenta, garantizando que usuarios distintos o el login de Google Demo nunca compartan o contaminen el inventario del otro.
     * **Catálogo de 19 Alimentos del Gacha:** Se registraron todos los ítems del Gacha con sus emojis, nombres y rarezas en `public.collectibles` de `supabase/schema.sql` y en el repositorio local.
     * **Recompensas en el flujo:** Al registrar una comida en `DiaryService`, se premia al usuario otorgando automáticamente monedas en su billetera de Supabase.
   * **Ajuste de Budgets:** Modifica presupuestos de compilación en `angular.json` para permitir estilos completos de componentes sin errores de build.
@@ -308,9 +309,9 @@ Para mantener el orden, la trazabilidad del código y evitar conflictos entre lo
   * **Guards:** `src/app/guards/auth.guard.ts` (`authGuard`, `onboardingGuard`) con soporte para esperar la restauración asíncrona de sesión (`waitForSession()`).
   * **Rutas:** `src/app/app.routes.ts`, `src/app/tabs/tabs.routes.ts`.
   * **Servicios:** 
-    * `src/app/services/auth.service.ts` (sesión, login, registro y sincronización con Supabase Auth).
+    * `src/app/services/auth.service.ts` (sesión, login, registro, getter `isCurrentSessionSupabase` y estabilización del ID demo).
     * `src/app/services/diary.service.ts` (`getTodaySummary()` y recompensas de monedas).
-    * `src/app/gacha/services/gacha.service.ts` (sincronización bidireccional de monedas e inventario con `profiles` y `user_gacha_inventory`).
+    * `src/app/gacha/services/gacha.service.ts` (particionado de almacenamiento por `userId`, reseteo al desloguearse y sincronización bidireccional con `profiles` y `user_gacha_inventory`).
     * `src/app/services/data/mock-collection.repository.ts` (catálogo sincronizado con los 19 ítems).
   * **Vistas:** `src/app/tab1/tab1.page.ts`, `tab1.page.html`.
   * **Base de Datos:** `supabase/schema.sql` con definición de tablas `profiles`, `nutrition_goals`, `meals`, `activities`, `collectibles` (con los 19 ítems del catálogo), `user_collectibles`, `user_gacha_inventory`, `reward_claims`, políticas RLS y función `open_weekly_reward`.

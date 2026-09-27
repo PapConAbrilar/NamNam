@@ -34,24 +34,38 @@ export interface CraftOutcome {
   providedIn: 'root',
 })
 export class GachaService {
-  private readonly CURRENCY_STORAGE_KEY = 'namnam_gacha_currency';
-  private readonly INVENTORY_STORAGE_KEY = 'namnam_gacha_inventory';
-  private readonly PET_STORAGE_KEY = 'namnam_gacha_pet';
   private readonly DEFAULT_STARTING_CURRENCY = 1000;
 
   private authService = inject(AuthService);
   private supabaseService = inject(SupabaseService);
 
-  private stateSubject = new BehaviorSubject<GachaState>(this.loadInitialState());
+  private currentUserId: string | null = null;
+  private stateSubject = new BehaviorSubject<GachaState>(this.getBlankState());
   public state$: Observable<GachaState> = this.stateSubject.asObservable();
 
   constructor() {
-    // Sincronizar desde Supabase al autenticarse o cambiar de usuario
+    this.cleanLegacyStorage();
+
+    // Sincronizar e independizar el estado del Gacha para cada usuario
     this.authService.currentUser$.subscribe((user) => {
-      if (user && isSupabaseConfigured()) {
-        this.syncFromSupabase(user.id).catch((err) => {
-          console.warn('Error sincronizando Gacha desde Supabase:', err);
-        });
+      const newUserId = user?.id ?? null;
+      if (newUserId !== this.currentUserId) {
+        this.currentUserId = newUserId;
+        if (!user) {
+          // Sesión cerrada: reiniciar estado reactivo a limpio
+          this.stateSubject.next(this.getBlankState());
+        } else {
+          // Sesión abierta: cargar el inventario específico de este usuario
+          const userState = this.loadUserState(newUserId);
+          this.stateSubject.next(userState);
+
+          // Si es un usuario registrado en Supabase, descargar su estado desde la nube
+          if (this.authService.isCurrentSessionSupabase) {
+            this.syncFromSupabase(user.id).catch((err) => {
+              console.warn('Error sincronizando Gacha desde Supabase:', err);
+            });
+          }
+        }
       }
     });
   }
@@ -199,24 +213,52 @@ export class GachaService {
     this.persist({ ...this.state, currency: this.state.currency + amount });
   }
 
-  private loadInitialState(): GachaState {
+  private cleanLegacyStorage(): void {
+    try {
+      localStorage.removeItem('namnam_gacha_currency');
+      localStorage.removeItem('namnam_gacha_inventory');
+      localStorage.removeItem('namnam_gacha_pet');
+    } catch {}
+  }
+
+  private getCurrencyKey(userId: string | null): string {
+    return userId ? `namnam_gacha_currency_${userId}` : 'namnam_gacha_currency_guest';
+  }
+
+  private getInventoryKey(userId: string | null): string {
+    return userId ? `namnam_gacha_inventory_${userId}` : 'namnam_gacha_inventory_guest';
+  }
+
+  private getPetKey(userId: string | null): string {
+    return userId ? `namnam_gacha_pet_${userId}` : 'namnam_gacha_pet_guest';
+  }
+
+  private getBlankState(): GachaState {
     return {
-      currency: this.loadCurrency(),
-      inventory: this.loadInventory(),
-      petItemId: localStorage.getItem(this.PET_STORAGE_KEY),
+      currency: this.DEFAULT_STARTING_CURRENCY,
+      inventory: {},
+      petItemId: null,
     };
   }
 
-  private loadCurrency(): number {
-    const saved = localStorage.getItem(this.CURRENCY_STORAGE_KEY);
+  private loadUserState(userId: string | null): GachaState {
+    return {
+      currency: this.loadCurrency(userId),
+      inventory: this.loadInventory(userId),
+      petItemId: localStorage.getItem(this.getPetKey(userId)),
+    };
+  }
+
+  private loadCurrency(userId: string | null): number {
+    const saved = localStorage.getItem(this.getCurrencyKey(userId));
     if (saved === null) return this.DEFAULT_STARTING_CURRENCY;
     const parsed = Number(saved);
     return Number.isFinite(parsed) ? parsed : this.DEFAULT_STARTING_CURRENCY;
   }
 
-  private loadInventory(): Inventory {
+  private loadInventory(userId: string | null): Inventory {
     try {
-      const saved = localStorage.getItem(this.INVENTORY_STORAGE_KEY);
+      const saved = localStorage.getItem(this.getInventoryKey(userId));
       return saved ? (JSON.parse(saved) as Inventory) : {};
     } catch {
       return {};
@@ -224,21 +266,26 @@ export class GachaService {
   }
 
   private persist(next: GachaState): void {
-    localStorage.setItem(this.CURRENCY_STORAGE_KEY, String(next.currency));
-    localStorage.setItem(this.INVENTORY_STORAGE_KEY, JSON.stringify(next.inventory));
-    if (next.petItemId) {
-      localStorage.setItem(this.PET_STORAGE_KEY, next.petItemId);
-    } else {
-      localStorage.removeItem(this.PET_STORAGE_KEY);
-    }
+    const userId = this.currentUserId;
+    this.saveToLocalStorage(userId, next);
     this.stateSubject.next(next);
 
-    // Si Supabase está conectado y hay usuario autenticado, sincronizar en la nube
+    // Si es un usuario autenticado en Supabase, sincronizar en la nube
     const user = this.authService.currentUser;
-    if (isSupabaseConfigured() && user) {
+    if (this.authService.isCurrentSessionSupabase && user && user.id === userId) {
       this.syncToSupabase(user.id, next).catch((err) => {
         console.warn('Error sincronizando Gacha con Supabase:', err);
       });
+    }
+  }
+
+  private saveToLocalStorage(userId: string | null, state: GachaState): void {
+    localStorage.setItem(this.getCurrencyKey(userId), String(state.currency));
+    localStorage.setItem(this.getInventoryKey(userId), JSON.stringify(state.inventory));
+    if (state.petItemId) {
+      localStorage.setItem(this.getPetKey(userId), state.petItemId);
+    } else {
+      localStorage.removeItem(this.getPetKey(userId));
     }
   }
 
@@ -279,6 +326,8 @@ export class GachaService {
   /** Descarga el inventario y las monedas desde Supabase */
   private async syncFromSupabase(userId: string): Promise<void> {
     try {
+      if (this.currentUserId !== userId) return;
+
       const client = this.supabaseService.client;
 
       // 1. Obtener moneda y mascota del perfil
@@ -288,14 +337,18 @@ export class GachaService {
         .eq('id', userId)
         .maybeSingle();
 
+      if (this.currentUserId !== userId) return;
+
       // 2. Obtener inventario del usuario
       const { data: rows } = await client
         .from('user_gacha_inventory')
         .select('item_id, rank, base_copies_held, first_obtained_at')
         .eq('user_id', userId);
 
-      let currency = this.state.currency;
-      let petItemId = this.state.petItemId;
+      if (this.currentUserId !== userId) return;
+
+      let currency = this.loadCurrency(userId);
+      let petItemId = localStorage.getItem(this.getPetKey(userId));
       const inventory: Inventory = {};
 
       if (profile) {
@@ -316,10 +369,6 @@ export class GachaService {
             firstObtainedAt: new Date(row.first_obtained_at).getTime(),
           };
         }
-      } else if (Object.keys(this.state.inventory).length > 0) {
-        // Si el usuario tenía inventario local pero nada en Supabase, subimos el inventario local
-        Object.assign(inventory, this.state.inventory);
-        this.syncToSupabase(userId, { currency, inventory, petItemId }).catch(() => {});
       }
 
       const nextState: GachaState = {
@@ -328,14 +377,7 @@ export class GachaService {
         petItemId,
       };
 
-      localStorage.setItem(this.CURRENCY_STORAGE_KEY, String(nextState.currency));
-      localStorage.setItem(this.INVENTORY_STORAGE_KEY, JSON.stringify(nextState.inventory));
-      if (nextState.petItemId) {
-        localStorage.setItem(this.PET_STORAGE_KEY, nextState.petItemId);
-      } else {
-        localStorage.removeItem(this.PET_STORAGE_KEY);
-      }
-
+      this.saveToLocalStorage(userId, nextState);
       this.stateSubject.next(nextState);
     } catch (err) {
       console.warn('Fallo al obtener estado del Gacha desde Supabase:', err);
