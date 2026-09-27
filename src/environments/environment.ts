@@ -3,7 +3,13 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
-  production: false
+  production: false,
+  // Credenciales públicas del proyecto Supabase (Project Settings → API).
+  // Si quedan vacías, la app usa los repositorios mock locales.
+  supabase: {
+    url: '',
+    anonKey: '',
+  },
 };
 
 /*

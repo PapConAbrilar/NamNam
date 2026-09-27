@@ -1,0 +1,87 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>ÑamÑam</ion-title>
+    <ion-buttons slot="end">
+      <div class="ion-float-end ion-padding-end">
+        <ion-avatar>
+          <img
+            [src]="authService.currentUser?.avatarUrl || 'https://ionicframework.com/docs/img/demos/avatar.svg'"
+            alt="Perfil"
+          />
+        </ion-avatar>
+        <div class="user-text">
+          <strong>{{ authService.currentUser?.name || 'Usuario' }}</strong>
+        </div>
+      </div>
+      <app-logout-button></app-logout-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content fullscreen>
+  <ion-refresher slot="fixed" (ionRefresh)="refresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="dashboard-shell">
+    @if (loading()) {
+      <div class="state"><ion-spinner name="crescent"></ion-spinner></div>
+    } @else if (error()) {
+      <div class="state">
+        <p>{{ error() }}</p>
+        <ion-button fill="outline" size="small" (click)="load()">Reintentar</ion-button>
+      </div>
+    } @else {
+      <section class="hero-card">
+        <header class="hero-heading">
+          <h1>Colección ÑamÑam</h1>
+          <p>{{ unlockedCount() }}/{{ items().length }} desbloqueados</p>
+        </header>
+
+        @if (reward(); as r) {
+          <div class="gacha-box">
+            <div class="gacha-head">
+              <strong>Próximo Tiro Gacha</strong>
+              <span class="gacha-pct">{{ r.progressPct }}%</span>
+            </div>
+            <div class="progress-track">
+              <span class="fill" [style.width.%]="r.progressPct"></span>
+            </div>
+
+            <ion-button expand="block" [disabled]="!r.canClaim || opening()" (click)="openReward(r.weekStart)">
+              @if (opening()) {
+                <ion-spinner name="dots"></ion-spinner>
+              } @else {
+                Abrir Recompensa Semanal
+              }
+            </ion-button>
+
+            <p class="gacha-hint">
+              @if (r.alreadyClaimed) {
+                Ya abriste la recompensa de esta semana. ¡Vuelve el lunes!
+              } @else if (r.canClaim) {
+                ¡Completaste la semana! Tu recompensa está lista.
+              } @else {
+                Registra comidas {{ r.daysRequired }} días esta semana para desbloquearla ({{ r.daysLogged }}/{{ r.daysRequired }}).
+              }
+            </p>
+          </div>
+        }
+      </section>
+
+      <div class="collection-grid">
+        @for (item of items(); track item.id) {
+          <section class="collectible-card" [class.locked]="!item.unlocked">
+            <div class="collectible-icon" [class]="item.rarity">
+              <span class="emoji">{{ item.emoji }}</span>
+              @if (!item.unlocked) {
+              }
+            </div>
+            <strong class="collectible-name">{{ item.name }}</strong>
+            <span class="rarity-badge" [class]="item.rarity">{{ rarityLabels[item.rarity] }}</span>
+          </section>
+        }
+      </div>
+    }
+  </div>
+</ion-content>

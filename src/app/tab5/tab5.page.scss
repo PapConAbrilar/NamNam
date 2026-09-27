@@ -1,0 +1,140 @@
+@use '../../theme/namnam' as nn;
+
+.dashboard-shell {
+  @include nn.shell;
+}
+
+.state {
+  @include nn.state-box;
+}
+
+// ---------- Cabecera y recompensa ----------
+
+.hero-card {
+  @include nn.card;
+  padding: 18px;
+}
+
+.hero-heading {
+  margin-bottom: 16px;
+
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 800;
+  }
+
+  p {
+    margin: 4px 0 0;
+    font-size: 0.85rem;
+    color: nn.$text-muted;
+  }
+}
+
+.gacha-box {
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.gacha-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+}
+
+.gacha-pct {
+  font-weight: 800;
+  color: nn.$lime;
+}
+
+.progress-track {
+  @include nn.progress-track(10px);
+  margin-bottom: 14px;
+}
+
+ion-button {
+  --border-radius: 14px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.gacha-hint {
+  margin: 10px 0 0;
+  font-size: 0.75rem;
+  text-align: center;
+  color: nn.$text-muted;
+}
+
+// ---------- Álbum ----------
+
+.collection-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.collectible-card {
+  @include nn.card;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 0;
+  padding: 16px 8px;
+  text-align: center;
+}
+
+.collectible-icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: rgba(148, 163, 184, 0.16);
+
+  &.rare { background: rgba(nn.$blue, 0.18); }
+  &.epic { background: rgba(nn.$purple, 0.18); }
+  &.legendary { background: rgba(nn.$amber, 0.18); }
+
+  .emoji {
+    font-size: 1.9rem;
+  }
+
+  .lock {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    font-size: 1.1rem;
+  }
+}
+
+.collectible-name {
+  font-size: 0.8rem;
+  line-height: 1.2;
+}
+
+.rarity-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: rgba(148, 163, 184, 0.2);
+  color: nn.$text-muted;
+
+  &.rare { background: rgba(nn.$blue, 0.2); color: nn.$blue; }
+  &.epic { background: rgba(nn.$purple, 0.2); color: nn.$purple; }
+  &.legendary { background: rgba(nn.$amber, 0.2); color: nn.$amber; }
+}
+
+.collectible-card.locked {
+  .emoji,
+  .collectible-name,
+  .rarity-badge {
+    filter: blur(3px) grayscale(1);
+    opacity: 0.45;
+  }
+}

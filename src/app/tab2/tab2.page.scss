@@ -1,0 +1,105 @@
+@use '../../theme/namnam' as nn;
+
+.dashboard-shell {
+  @include nn.shell;
+}
+
+.page-heading {
+  @include nn.page-heading;
+}
+
+.state {
+  @include nn.state-box;
+}
+
+.day-card {
+  @include nn.card;
+  padding: 18px 18px 6px;
+}
+
+.day-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+
+  h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 800;
+  }
+}
+
+.kcal-badge {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(nn.$lime, 0.18);
+  color: nn.$lime-light;
+  font-size: 0.8rem;
+  font-weight: 700;
+
+  &.over {
+    background: rgba(nn.$amber, 0.18);
+    color: nn.$amber;
+  }
+}
+
+.progress-track {
+  @include nn.progress-track(8px);
+  margin-bottom: 10px;
+
+  .fill.over {
+    background: nn.$amber;
+  }
+}
+
+.meal-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid nn.$divider;
+}
+
+.meal-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+
+  strong {
+    display: block;
+    font-size: 0.9rem;
+  }
+
+  small {
+    color: nn.$text-muted;
+  }
+}
+
+.meal-emoji {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 1.2rem;
+}
+
+.meal-kcal {
+  font-weight: 800;
+  color: nn.$lime;
+}
+
+.empty {
+  margin: 0;
+  padding: 12px 0 14px;
+  border-top: 1px solid nn.$divider;
+  font-size: 0.85rem;
+  color: nn.$text-muted;
+}
