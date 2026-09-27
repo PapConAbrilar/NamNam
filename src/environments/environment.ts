@@ -10,6 +10,9 @@ export const environment = {
     url: '',
     anonKey: '',
   },
+  gemini: {
+    apiKey: '',
+  },
 };
 
 /*

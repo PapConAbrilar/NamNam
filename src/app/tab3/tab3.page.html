@@ -1,6 +1,9 @@
 <ion-header>
   <ion-toolbar>
-    <ion-title>ÑamÑam</ion-title>
+    <ion-title>
+      @if (currentView === 'result') { Resultado IA 🤖 }
+      @else { Reconocimiento IA 📸 }
+    </ion-title>
     <ion-buttons slot="end">
       <div class="ion-float-end ion-padding-end">
         <ion-avatar>
@@ -18,12 +21,212 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Tab 3</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content class="tab3-content" [fullscreen]="true">
+  <!-- Input oculto para carga de imágenes desde el explorador -->
+  <input #fileInput type="file" accept="image/*" (change)="onFileSelected($event)" style="display: none;" />
 
-  <app-explore-container name="Tab 3 page"></app-explore-container>
+  <!-- ==================== ESTADO 1: CAPTURA DE FOTO CON CÁMARA REAL ==================== -->
+  @if (currentView === 'capture') {
+    <div class="capture-container">
+      <div class="viewfinder-wrapper">
+        <div class="viewfinder-frame">
+          <div class="corner top-left"></div>
+          <div class="corner top-right"></div>
+          <div class="corner bottom-left"></div>
+          <div class="corner bottom-right"></div>
+
+          <!-- Video de la cámara en vivo -->
+          <video
+            #videoPlayer
+            autoplay
+            playsinline
+            muted
+            class="camera-live-feed"
+            [class.hidden]="!isCameraStreaming">
+          </video>
+
+          <!-- Placeholder si no hay stream activo o permisos pendientes -->
+          @if (!isCameraStreaming) {
+            <div class="viewfinder-placeholder">
+              <span class="plate-emoji">🥗</span>
+              <div class="status-pill">
+                <ion-icon name="sparkles" color="primary"></ion-icon>
+                <span>Gemini 3.8 Flash Lista</span>
+              </div>
+              @if (cameraError) {
+                <small class="camera-hint">{{ cameraError }}</small>
+              }
+            </div>
+          }
+
+          <!-- Botón flotante para cambiar de cámara (trasera / frontal) -->
+          @if (isCameraStreaming) {
+            <button type="button" class="btn-flip-camera" (click)="toggleFacingMode()" aria-label="Cambiar cámara">
+              <ion-icon name="sync-outline"></ion-icon>
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="capture-instructions">
+        <h2>Centra tu plato en el recuadro</h2>
+        <p>Apunta con tu cámara o sube una foto. Gemini identificará los alimentos y calculará las calorías automáticamente.</p>
+      </div>
+
+      <div class="capture-actions">
+        <!-- Botón de Galería -->
+        <ion-button fill="outline" shape="round" class="action-circle-btn" (click)="pickFromGallery()" title="Galería / Subir foto">
+          <ion-icon slot="icon-only" name="images"></ion-icon>
+        </ion-button>
+
+        <!-- Botón de Disparo Principal -->
+        <button type="button" class="shutter-button" (click)="takePhoto()" aria-label="Capturar fotografía">
+          <div class="shutter-inner">
+            <ion-icon name="camera"></ion-icon>
+          </div>
+        </button>
+
+        <!-- Botón de Selección de Archivo Alternativo -->
+        <ion-button fill="outline" shape="round" class="action-circle-btn" (click)="triggerFileInput()" title="Seleccionar archivo">
+          <ion-icon slot="icon-only" name="refresh"></ion-icon>
+        </ion-button>
+      </div>
+    </div>
+  }
+
+  <!-- ==================== ESTADO 2: ANALIZANDO ==================== -->
+  @if (currentView === 'analyzing') {
+    <div class="analyzing-container">
+      <div class="preview-mini-wrapper">
+        <img [src]="previewImage" alt="Comida a analizar" class="preview-mini-img" />
+        <div class="radar-scan"></div>
+      </div>
+
+      <ion-spinner name="crescent" color="primary" class="analyzing-spinner"></ion-spinner>
+      <h2>Analizando tu comida...</h2>
+      <p>Gemini 3.8 Flash está identificando los alimentos, porciones y macronutrientes.</p>
+    </div>
+  }
+
+  <!-- ==================== ESTADO 3: RESULTADOS IA ==================== -->
+  @if (currentView === 'result' && analysisResult) {
+    <div class="result-container">
+      <!-- Foto previa y banner de confianza -->
+      <div class="photo-banner">
+        <img [src]="previewImage" alt="Foto capturada" class="captured-image" />
+        <div class="confidence-badge">
+          <ion-icon name="sparkles" color="primary"></ion-icon>
+          <span>{{ (analysisResult.confidence * 100).toFixed(0) }}% confianza · Gemini 3.8 Flash</span>
+        </div>
+      </div>
+
+      <!-- Selector de Tipo de Comida -->
+      <div class="meal-type-selector">
+        <ion-segment [(ngModel)]="selectedMealType" mode="ios">
+          <ion-segment-button value="breakfast">
+            <ion-label>Desayuno</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="lunch">
+            <ion-label>Almuerzo</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="dinner">
+            <ion-label>Cena</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="snack">
+            <ion-label>Snack</ion-label>
+          </ion-segment-button>
+        </ion-segment>
+      </div>
+
+      <!-- Nombre del plato detectado -->
+      <div class="meal-title-card">
+        <div class="title-row">
+          <ion-icon name="restaurant-outline" color="primary"></ion-icon>
+          <input
+            type="text"
+            [(ngModel)]="analysisResult.mealName"
+            class="meal-name-input"
+            placeholder="Nombre de la comida"
+          />
+        </div>
+      </div>
+
+      <!-- Alimentos detectados -->
+      <div class="foods-section">
+        <div class="section-header">
+          <h3>Alimentos Detectados</h3>
+          <span class="count-tag">{{ analysisResult.foods.length }} items</span>
+        </div>
+
+        <div class="food-cards-list">
+          @for (food of analysisResult.foods; track $index) {
+            <div class="food-card">
+              <span class="food-emoji">{{ food.emoji || '🍽️' }}</span>
+              <div class="food-info">
+                <span class="food-name">{{ food.name }}</span>
+                <span class="food-portion">{{ food.portion }}</span>
+              </div>
+              <div class="food-calories">
+                <strong>{{ food.kcal }}</strong>
+                <small>kcal</small>
+              </div>
+              <button type="button" class="btn-remove-food" (click)="removeFoodItem($index)" aria-label="Eliminar alimento">
+                <ion-icon name="trash-outline"></ion-icon>
+              </button>
+            </div>
+          } @empty {
+            <p class="empty-foods">No se detectaron alimentos en el análisis.</p>
+          }
+        </div>
+      </div>
+
+      <!-- Resumen Nutricional -->
+      <div class="nutrition-summary-card">
+        <h3>Resumen Nutricional</h3>
+        <div class="macros-grid">
+          <div class="macro-stat calories">
+            <span class="val">{{ analysisResult.totalKcal }}</span>
+            <span class="unit">kcal</span>
+            <span class="lbl">Calorías</span>
+          </div>
+          <div class="macro-stat protein">
+            <span class="val">{{ analysisResult.proteinGrams }}g</span>
+            <span class="lbl">Proteínas</span>
+          </div>
+          <div class="macro-stat carbs">
+            <span class="val">{{ analysisResult.carbsGrams }}g</span>
+            <span class="lbl">Carbos</span>
+          </div>
+          <div class="macro-stat fat">
+            <span class="val">{{ analysisResult.fatGrams }}g</span>
+            <span class="lbl">Grasas</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botones de Acción -->
+      <div class="result-actions">
+        <ion-button
+          expand="block"
+          shape="round"
+          color="primary"
+          class="btn-confirm"
+          [disabled]="isProcessing"
+          (click)="confirmMeal()">
+          <ion-icon slot="start" name="checkmark"></ion-icon>
+          ✓ Confirmar y Registrar
+        </ion-button>
+
+        <ion-button
+          fill="clear"
+          color="medium"
+          class="btn-retake"
+          [disabled]="isProcessing"
+          (click)="resetCapture()">
+          <ion-icon slot="start" name="refresh"></ion-icon>
+          Tomar otra foto
+        </ion-button>
+      </div>
+    </div>
+  }
 </ion-content>

@@ -39,4 +39,10 @@ export class DiaryService {
         };
       });
   }
+
+  /** Registra una comida nueva en el repositorio. */
+  async recordMeal(meal: Omit<Meal, 'id'>): Promise<Meal> {
+    return this.repo.addMeal(meal);
+  }
 }
+

@@ -224,7 +224,7 @@ Para mantener el orden, la trazabilidad del código y evitar conflictos entre lo
   * **Rutas:** `src/app/app.routes.ts` (añade ruta `onboarding` con carga perezosa).
 
 #### 5. Tabs Historial, Progreso y Colección con Capa de Datos Preparada para Supabase
-* **Estado:** 🟡 En Revisión
+* **Estado:** 🟢 Completada (Validada por Benjamín Pinto)
 * **Fecha:** 2026-09-27
 * **Autor / Responsable:** Claude (agente IA) & Cristóbal Ramírez
 * **¿Qué hace?**:
@@ -241,7 +241,7 @@ Para mantener el orden, la trazabilidad del código y evitar conflictos entre lo
   * **Detalle técnico:** dependencia `@supabase/supabase-js`. Las consultas no filtran por usuario; lo hacen las políticas RLS con `auth.uid()`, por lo que se requiere migrar `AuthService` a Supabase Auth para ver datos reales. El sorteo de la recompensa se ejecuta en el servidor.
 
 #### 6. Botón de Cierre de Sesión (Logout)
-* **Estado:** 🟡 En Revisión
+* **Estado:** 🟢 Completada (Validada por Benjamín Pinto)
 * **Fecha:** 2026-09-27
 * **Autor / Responsable:** Claude (agente IA) & Cristóbal Ramírez
 * **¿Qué hace?**:
@@ -250,4 +250,24 @@ Para mantener el orden, la trazabilidad del código y evitar conflictos entre lo
   * **Componentes / Vistas:** `src/app/components/logout-button/logout-button.component.ts` (componente standalone `app-logout-button` con `ion-button` + `ion-icon` `log-out-outline`), insertado dentro de `ion-buttons slot="end"` en `tab1` a `tab5`.
   * **Servicios / Lógica:** usa `AuthService.logout()` existente, `AlertController` para la confirmación y `NavController.navigateRoot('/login')`.
   * **Detalle técnico:** aún no existen guards de ruta, por lo que tras cerrar sesión se puede volver a `/tabs` escribiendo la URL. Pendiente: agregar un `canActivate` que exija sesión.
+
+#### 7. Reconocimiento Fotográfico de Alimentos con Gemini IA y Capacitor Camera
+* **Estado:** 🟢 Completada (Validada por Benjamín Pinto)
+* **Fecha:** 2026-09-27
+* **Autor / Responsable:** Antigravity AI & Benjamín Pinto
+* **¿Qué hace?**:
+  * Permite capturar fotos de comidas mediante transmisión en vivo de la cámara real en el visor (WebRTC / Capacitor Camera) con soporte para alternar entre cámara frontal y trasera, o seleccionarlas desde la galería / explorador de archivos.
+  * Envía la imagen a la API multimodal de **Google Gemini 3.8 Flash** solicitando un análisis nutricional con respuesta estricta en formato JSON.
+  * Detecta los alimentos individuales con sus porciones estimadas, emojis y calorías, además de totalizar las calorías y los macronutrientes (proteínas, carbohidratos, grasas) y calcular el nivel de confianza del reconocimiento.
+  * Ofrece una pantalla de revisión interactiva donde el usuario puede editar el nombre del plato, seleccionar el tipo de comida (desayuno, almuerzo, cena, snack), eliminar alimentos detectados incorrectamente y confirmar el registro.
+  * Al confirmar, almacena la comida en `NutritionRepository` (mock local persistido o Supabase) a través de `DiaryService`, actualizando de inmediato los datos del Dashboard (tab1), del Historial (tab2) y del Progreso (tab4).
+* **¿Cómo lo hace?**:
+  * **Componentes / Vistas:** `src/app/tab3/tab3.page.ts`, `tab3.page.html`, `tab3.page.scss` (interfaz con visor de cámara en vivo en `<video>`, botón de rotación de cámara, captura por `<canvas>`, análisis con radar animado, vista de resultados y confirmación, compresión de imagen previa al envío y sincronización reactiva con `NgZone` y `ChangeDetectorRef`).
+  * **Servicios / Lógica:** 
+    * `src/app/services/gemini.service.ts`: servicio multimodal con pool de respaldo ordenado (`gemini-flash-latest`, `gemini-3.7-flash`, `gemini-3.8-flash`) usando la API Key de `environment.ts` para tolerar picos de alta demanda de Google.
+    * `src/app/services/diary.service.ts`: método `recordMeal(...)`.
+    * `src/app/services/data/nutrition.repository.ts`, `mock-nutrition.repository.ts`, `supabase-nutrition.repository.ts`: implementación de `addMeal(...)`.
+  * **Modelos:** `src/app/models/food-recognition.model.ts` (`FoodRecognitionResult`, `DetectedFoodItem`).
+  * **Dependencias:** `@capacitor/camera` y WebRTC `navigator.mediaDevices.getUserMedia` para soporte nativo y web.
+
 
