@@ -12,4 +12,7 @@ export abstract class NutritionRepository {
   /** Registros de peso hasta `to`, ordenados por fecha ascendente. */
   abstract getWeightLogs(to: string): Promise<WeightLog[]>;
   abstract getWaterLogs(from: string, to: string): Promise<WaterLog[]>;
+  /** Registra una nueva comida. */
+  abstract addMeal(meal: Omit<Meal, 'id'>): Promise<Meal>;
 }
+

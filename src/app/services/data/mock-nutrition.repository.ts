@@ -101,6 +101,15 @@ export class MockNutritionRepository extends NutritionRepository {
     })).filter((w) => w.logDate >= from && w.logDate <= to);
   }
 
+  async addMeal(meal: Omit<Meal, 'id'>): Promise<Meal> {
+    const created: Meal = {
+      ...meal,
+      id: `meal-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    };
+    this.meals.unshift(created);
+    return created;
+  }
+
   private buildMeals(): Meal[] {
     const today = new Date();
     const meals: Meal[] = [];

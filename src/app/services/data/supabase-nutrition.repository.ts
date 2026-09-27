@@ -123,4 +123,36 @@ export class SupabaseNutritionRepository extends NutritionRepository {
       ml: Number(r.ml),
     }));
   }
+
+  async addMeal(meal: Omit<Meal, 'id'>): Promise<Meal> {
+    const { data, error } = await this.supabase.client
+      .from('meals')
+      .insert({
+        name: meal.name,
+        meal_type: meal.mealType,
+        consumed_at: meal.consumedAt,
+        log_date: meal.logDate,
+        kcal: meal.kcal,
+        protein_g: meal.proteinG,
+        carbs_g: meal.carbsG,
+        fat_g: meal.fatG,
+        photo_path: meal.photoPath ?? null,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    const r = data as MealRow;
+    return {
+      id: r.id,
+      name: r.name,
+      mealType: r.meal_type,
+      consumedAt: r.consumed_at,
+      logDate: r.log_date,
+      kcal: Number(r.kcal),
+      proteinG: Number(r.protein_g),
+      carbsG: Number(r.carbs_g),
+      fatG: Number(r.fat_g),
+      photoPath: r.photo_path,
+    };
+  }
 }
