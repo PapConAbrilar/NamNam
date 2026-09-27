@@ -15,6 +15,10 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/onboarding/onboarding.page').then((m) => m.OnboardingPage),
   },
   {
+    path: 'gacha',
+    loadComponent: () => import('./gacha/pages/gacha-page/gacha.page').then((m) => m.GachaPage),
+  },
+  {
     path: '',
     loadChildren: () => import('./tabs/tabs.routes').then((m) => m.routes),
   },
