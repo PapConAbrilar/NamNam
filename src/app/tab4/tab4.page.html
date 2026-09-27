@@ -1,0 +1,114 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>ÑamÑam</ion-title>
+    <ion-buttons slot="end">
+      <div class="ion-float-end ion-padding-end">
+        <ion-avatar>
+          <img
+            [src]="authService.currentUser?.avatarUrl || 'https://ionicframework.com/docs/img/demos/avatar.svg'"
+            alt="Perfil"
+          />
+        </ion-avatar>
+        <div class="user-text">
+          <strong>{{ authService.currentUser?.name || 'Usuario' }}</strong>
+        </div>
+      </div>
+      <app-logout-button></app-logout-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content fullscreen>
+  <ion-refresher slot="fixed" (ionRefresh)="refresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="dashboard-shell">
+    <header class="page-heading">
+      <h1>Progreso Semanal</h1>
+      <p>{{ progress()?.rangeLabel }}</p>
+    </header>
+
+    @if (loading()) {
+      <div class="state"><ion-spinner name="crescent"></ion-spinner></div>
+    } @else if (error()) {
+      <div class="state">
+        <p>{{ error() }}</p>
+        <ion-button fill="outline" size="small" (click)="load()">Reintentar</ion-button>
+      </div>
+    } @else if (progress(); as p) {
+      <section class="card chart-card">
+        <div class="bars">
+          @for (bar of p.bars; track bar.date) {
+            <div class="bar-col" [class]="bar.status">
+              <div class="bar-area" [attr.aria-label]="bar.dayLetter + ': ' + bar.kcal + ' de ' + bar.targetKcal + ' kcal'">
+                <div class="bar" [style.height.%]="bar.heightPct"></div>
+              </div>
+              <span class="bar-label">{{ bar.dayLetter }}</span>
+            </div>
+          }
+        </div>
+
+        <div class="legend">
+          <span><i class="dot under"></i>Bajo meta</span>
+          <span><i class="dot over"></i>Sobre meta</span>
+          <span><i class="dot today"></i>Hoy</span>
+        </div>
+      </section>
+
+      <div class="stats-grid">
+        <section class="card stat-card">
+          <strong class="stat-value lime">{{ p.daysOnTarget }}/{{ p.totalDays }}</strong>
+          <span class="stat-label">Días con meta</span>
+          <small>esta semana</small>
+        </section>
+
+        <section class="card stat-card">
+          <strong class="stat-value amber">{{ p.currentStreak }} {{ p.currentStreak === 1 ? 'día' : 'días' }}</strong>
+          <span class="stat-label">Racha actual</span>
+          <small>récord: {{ p.recordStreak }}</small>
+        </section>
+
+        <section class="card stat-card">
+          <strong class="stat-value blue">{{ p.currentWeightKg !== null ? p.currentWeightKg + ' kg' : '—' }}</strong>
+          <span class="stat-label">Peso actual</span>
+          <small>{{ weightDeltaLabel(p.weightDeltaKg) }}</small>
+        </section>
+
+        <section class="card stat-card">
+          <strong class="stat-value green">{{ p.avgWaterL !== null ? p.avgWaterL + ' L' : '—' }}</strong>
+          <span class="stat-label">Agua promedio</span>
+          <small>meta: {{ p.waterGoalL }} L</small>
+        </section>
+      </div>
+
+      <section class="card macro-card">
+        <h3>Macros Semanales</h3>
+
+        <div class="macro-row blue">
+          <div class="macro-head">
+            <span class="macro-name">Proteínas</span>
+            <span class="macro-value">{{ p.macros.protein.consumedG }}g / {{ p.macros.protein.targetG }}g</span>
+          </div>
+          <div class="progress-track"><span class="fill" [style.width.%]="macroPct(p.macros.protein)"></span></div>
+        </div>
+
+        <div class="macro-row yellow">
+          <div class="macro-head">
+            <span class="macro-name">Carbohidratos</span>
+            <span class="macro-value">{{ p.macros.carbs.consumedG }}g / {{ p.macros.carbs.targetG }}g</span>
+          </div>
+          <div class="progress-track"><span class="fill" [style.width.%]="macroPct(p.macros.carbs)"></span></div>
+        </div>
+
+        <div class="macro-row red">
+          <div class="macro-head">
+            <span class="macro-name">Grasas</span>
+            <span class="macro-value">{{ p.macros.fat.consumedG }}g / {{ p.macros.fat.targetG }}g</span>
+          </div>
+          <div class="progress-track"><span class="fill" [style.width.%]="macroPct(p.macros.fat)"></span></div>
+        </div>
+      </section>
+    }
+  </div>
+</ion-content>

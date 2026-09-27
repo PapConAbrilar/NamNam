@@ -1,8 +1,20 @@
-<ion-header [translucent]="true">
+<ion-header>
   <ion-toolbar>
-    <ion-title>
-      Tab 3
-    </ion-title>
+    <ion-title>ÑamÑam</ion-title>
+    <ion-buttons slot="end">
+      <div class="ion-float-end ion-padding-end">
+        <ion-avatar>
+          <img
+            [src]="authService.currentUser?.avatarUrl || 'https://ionicframework.com/docs/img/demos/avatar.svg'"
+            alt="Perfil"
+          />
+        </ion-avatar>
+        <div class="user-text">
+          <strong>{{ authService.currentUser?.name || 'Usuario' }}</strong>
+        </div>
+      </div>
+      <app-logout-button></app-logout-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 

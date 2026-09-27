@@ -1,0 +1,190 @@
+@use '../../theme/namnam' as nn;
+
+.dashboard-shell {
+  @include nn.shell;
+}
+
+.page-heading {
+  @include nn.page-heading;
+}
+
+.state {
+  @include nn.state-box;
+}
+
+.card {
+  @include nn.card;
+  padding: 18px;
+}
+
+// ---------- Gráfico semanal ----------
+
+.bars {
+  display: flex;
+  gap: 6px;
+  height: 160px;
+}
+
+.bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.bar-area {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+
+.bar {
+  width: 100%;
+  min-height: 4px;
+  border-radius: 10px 10px 4px 4px;
+  background: nn.$blue;
+  transition: height 0.4s ease;
+}
+
+.bar-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: nn.$text-muted;
+}
+
+.bar-col.over .bar {
+  background: nn.$amber;
+}
+
+.bar-col.today {
+  .bar {
+    background: nn.$lime;
+  }
+
+  .bar-label {
+    color: nn.$lime;
+  }
+}
+
+.bar-col.future .bar {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid nn.$divider;
+  font-size: 0.75rem;
+  color: nn.$text-muted;
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+
+  &.under { background: nn.$blue; }
+  &.over { background: nn.$amber; }
+  &.today { background: nn.$lime; }
+}
+
+// ---------- Tarjetas de métricas ----------
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 14px;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  small {
+    font-size: 0.75rem;
+    color: nn.$text-muted;
+  }
+}
+
+.stat-emoji {
+  font-size: 1.6rem;
+  margin-bottom: 6px;
+}
+
+.stat-value {
+  font-size: 1.4rem;
+  font-weight: 800;
+
+  &.lime { color: nn.$lime; }
+  &.amber { color: nn.$amber; }
+  &.blue { color: nn.$blue; }
+  &.green { color: nn.$green; }
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+// ---------- Macros ----------
+
+.macro-card h3 {
+  margin: 0 0 14px;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.macro-row {
+  margin-bottom: 14px;
+
+  &:last-child {
+    margin-bottom: 4px;
+  }
+}
+
+.macro-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+}
+
+.macro-name {
+  font-weight: 700;
+}
+
+.macro-value {
+  color: nn.$text-muted;
+}
+
+.progress-track {
+  @include nn.progress-track(10px);
+}
+
+.macro-row.blue {
+  .macro-name { color: nn.$blue; }
+  .fill { background: nn.$blue; }
+}
+
+.macro-row.yellow {
+  .macro-name { color: nn.$amber; }
+  .fill { background: nn.$amber; }
+}
+
+.macro-row.red {
+  .macro-name { color: nn.$red; }
+  .fill { background: nn.$red; }
+}

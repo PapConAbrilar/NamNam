@@ -223,7 +223,31 @@ Para mantener el orden, la trazabilidad del código y evitar conflictos entre lo
   * **Componentes / Vistas:** `src/app/pages/onboarding/onboarding.page.ts`, `onboarding.page.html`, `onboarding.page.scss` (componente standalone con `ion-header`, `ion-progress-bar`, `ion-input`, `ion-card` y estilos adaptables al modo oscuro/claro).
   * **Rutas:** `src/app/app.routes.ts` (añade ruta `onboarding` con carga perezosa).
 
+#### 5. Tabs Historial, Progreso y Colección con Capa de Datos Preparada para Supabase
+* **Estado:** 🟡 En Revisión
+* **Fecha:** 2026-09-27
+* **Autor / Responsable:** Claude (agente IA) & Cristóbal Ramírez
+* **¿Qué hace?**:
+  * **Historial (tab2 — Diario Alimenticio):** comidas de los últimos 14 días agrupadas por día ("Hoy", "Ayer", fechas), con badge y barra de consumido vs. meta del día, emoji por tipo de comida, hora y kcal.
+  * **Progreso (tab4 — Progreso Semanal):** gráfico de barras L–D (azul bajo meta, ámbar sobre meta, lima hoy), tarjetas de días con meta, racha actual/récord, peso actual con variación semanal y agua promedio, y macros promedio de la semana vs. meta.
+  * **Colección (tab5 — Colección ÑamÑam):** álbum de 9 coleccionables por rareza (bloqueados con desenfoque y candado), progreso hacia el "Tiro Gacha" (días registrados en la semana) y botón para abrir la recompensa semanal.
+  * Todas las tabs leen de Supabase cuando `environment.supabase` tiene credenciales; sin ellas usan repositorios mock con los datos del prototipo. Incluyen pull-to-refresh, estados de carga y error, y recargan al entrar a la tab.
+* **¿Cómo lo hace?**:
+  * **Componentes / Vistas:** `src/app/tab2/`, `src/app/tab4/`, `src/app/tab5/` (componentes standalone con signals y control flow `@if`/`@for`, paleta oscura de tab1 compartida en `src/theme/_namnam.scss`).
+  * **Servicios / Lógica:** `src/app/services/diary.service.ts`, `progress.service.ts`, `collection.service.ts`, `goal.service.ts`, `supabase.service.ts`.
+  * **Repositorios:** `src/app/services/data/` — contratos abstractos `NutritionRepository` y `CollectionRepository` con implementaciones Supabase y mock, seleccionadas en `data.providers.ts` (`provideDataLayer()` en `main.ts`).
+  * **Modelos / Tipos:** `src/app/models/nutrition.model.ts`, `src/app/models/collection.model.ts`; utilidades de fecha local en `src/app/utils/date.utils.ts`.
+  * **Base de datos:** `supabase/schema.sql` (tablas, vista `daily_nutrition_summary`, función `open_weekly_reward`, RLS, bucket de fotos y catálogo inicial) documentado en `supabase/README.md`.
+  * **Detalle técnico:** dependencia `@supabase/supabase-js`. Las consultas no filtran por usuario; lo hacen las políticas RLS con `auth.uid()`, por lo que se requiere migrar `AuthService` a Supabase Auth para ver datos reales. El sorteo de la recompensa se ejecuta en el servidor.
 
-
-
+#### 6. Botón de Cierre de Sesión (Logout)
+* **Estado:** 🟡 En Revisión
+* **Fecha:** 2026-09-27
+* **Autor / Responsable:** Claude (agente IA) & Cristóbal Ramírez
+* **¿Qué hace?**:
+  * Agrega un botón con ícono de salida en el toolbar de las 5 tabs. Al tocarlo pide confirmación ("Cancelar" / "Salir"); al confirmar cierra la sesión y vuelve a la pantalla de login, reiniciando el historial de navegación.
+* **¿Cómo lo hace?**:
+  * **Componentes / Vistas:** `src/app/components/logout-button/logout-button.component.ts` (componente standalone `app-logout-button` con `ion-button` + `ion-icon` `log-out-outline`), insertado dentro de `ion-buttons slot="end"` en `tab1` a `tab5`.
+  * **Servicios / Lógica:** usa `AuthService.logout()` existente, `AlertController` para la confirmación y `NavController.navigateRoot('/login')`.
+  * **Detalle técnico:** aún no existen guards de ruta, por lo que tras cerrar sesión se puede volver a `/tabs` escribiendo la URL. Pendiente: agregar un `canActivate` que exija sesión.
 

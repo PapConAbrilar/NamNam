@@ -1,17 +1,130 @@
-<ion-header [translucent]="true">
+<ion-header>
   <ion-toolbar>
-    <ion-title>
-      Tab 1
-    </ion-title>
+    <ion-title>ÑamÑam</ion-title>
+    <ion-buttons slot="end">
+      <div class="ion-float-end ion-padding-end">
+        <ion-avatar>
+          <img
+            [src]="authService.currentUser?.avatarUrl || 'https://ionicframework.com/docs/img/demos/avatar.svg'"
+            alt="Perfil"
+          />
+        </ion-avatar>
+        <div class="user-text">
+          <strong>{{ authService.currentUser?.name || 'Usuario' }}</strong>
+        </div>
+      </div>
+      <app-logout-button></app-logout-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Tab 1</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content class="home-page" fullscreen>
+  <div class="dashboard-shell">
 
-  <app-explore-container name="Tab 1 page"></app-explore-container>
+    <section class="summary-card" slot="middle">
+      <div class="ring-progress" style="--progress: 62%;">
+        <div class="ring-inner">
+          <strong>600</strong>
+          <span>restantes</span>
+          <small>de 1850 kcal</small>
+        </div>
+      </div>
+
+      <div class="summary-stats">
+        <div class="stat">
+          <span class="value">1,250</span>
+          <span class="label">Consumidas</span>
+        </div>
+
+        <div class="stat">
+          <span class="value">1,850</span>
+          <span class="label">Objetivo</span>
+        </div>
+
+        <div class="stat">
+          <span class="value">340</span>
+          <span class="label">Quemadas</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="macro-card">
+      <div class="section-header">
+        <h3>Macronutrientes</h3>
+        <span>de hoy</span>
+      </div>
+
+      <div class="macro-row">
+        <div class="macro-label">
+          <span>Proteínas</span>
+        </div>
+        <div class="macro-bar blue">
+          <span class="fill" style="width: 62%"></span>
+        </div>
+        <div class="macro-value">98g</div>
+      </div>
+
+      <div class="macro-row">
+        <div class="macro-label">
+          <span>Carbohidratos</span>
+        </div>
+        <div class="macro-bar yellow">
+          <span class="fill" style="width: 70%"></span>
+        </div>
+        <div class="macro-value">180g</div>
+      </div>
+
+      <div class="macro-row">
+        <div class="macro-label">
+          <span>Grasas</span>
+        </div>
+        <div class="macro-bar red">
+          <span class="fill" style="width: 55%"></span>
+        </div>
+        <div class="macro-value">45g</div>
+      </div>
+    </section>
+
+    <section class="meal-card">
+      <div class="section-header">
+        <h3>Comidas de Hoy</h3>
+        <a href="#">Ver todo</a>
+      </div>
+
+      <div class="meal-item">
+        <div class="meal-main">
+          <span class="meal-icon breakfast"></span>
+          <div>
+            <strong>Desayuno</strong>
+            <small>Avena, platano, leche</small>
+          </div>
+        </div>
+        <span class="meal-kcal">420 kcal</span>
+      </div>
+
+      <div class="meal-item">
+        <div class="meal-main">
+          <span class="meal-icon lunch"></span>
+          <div>
+            <strong>Almuerzo</strong>
+            <small>Arroz, pollo, ensalada</small>
+          </div>
+        </div>
+        <span class="meal-kcal">650 kcal</span>
+      </div>
+
+      <div class="meal-item">
+        <div class="meal-main">
+          <span class="meal-icon snack"></span>
+          <div>
+            <strong>Snack</strong>
+            <small>Manzana, nueces</small>
+          </div>
+        </div>
+        <span class="meal-kcal">180 kcal</span>
+      </div>
+    </section>
+
+  </div>
 </ion-content>
+

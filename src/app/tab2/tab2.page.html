@@ -1,17 +1,74 @@
-<ion-header [translucent]="true">
+<ion-header>
   <ion-toolbar>
-    <ion-title>
-      Tab 2
-    </ion-title>
+    <ion-title>ÑamÑam</ion-title>
+    <ion-buttons slot="end">
+      <div class="ion-float-end ion-padding-end">
+        <ion-avatar>
+          <img
+            [src]="authService.currentUser?.avatarUrl || 'https://ionicframework.com/docs/img/demos/avatar.svg'"
+            alt="Perfil"
+          />
+        </ion-avatar>
+        <div class="user-text">
+          <strong>{{ authService.currentUser?.name || 'Usuario' }}</strong>
+        </div>
+      </div>
+      <app-logout-button></app-logout-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Tab 2</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content fullscreen>
+  <ion-refresher slot="fixed" (ionRefresh)="refresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
 
-  <app-explore-container name="Tab 2 page"></app-explore-container>
+  <div class="dashboard-shell">
+    <header class="page-heading">
+      <h1>Diario Alimenticio</h1>
+      <p>{{ monthLabel }}</p>
+    </header>
+
+    @if (loading()) {
+      <div class="state"><ion-spinner name="crescent"></ion-spinner></div>
+    } @else if (error()) {
+      <div class="state">
+        <p>{{ error() }}</p>
+        <ion-button fill="outline" size="small" (click)="load()">Reintentar</ion-button>
+      </div>
+    } @else {
+      @for (day of days(); track day.date) {
+        <section class="day-card">
+          <div class="day-header">
+            <h3>{{ day.label }}</h3>
+            <span class="kcal-badge" [class.over]="day.consumedKcal > day.targetKcal">
+              {{ day.consumedKcal }} / {{ day.targetKcal }} kcal
+            </span>
+          </div>
+
+          <div class="progress-track">
+            <span
+              class="fill"
+              [class.over]="day.consumedKcal > day.targetKcal"
+              [style.width.%]="progressPct(day.consumedKcal, day.targetKcal)"
+            ></span>
+          </div>
+
+          @for (meal of day.meals; track meal.id) {
+            <div class="meal-item">
+              <div class="meal-main">
+                <div>
+                  <strong>{{ mealLabel[meal.mealType] }} — {{ meal.name }}</strong>
+                  <small>{{ formatTime(meal.consumedAt) }}</small>
+                </div>
+              </div>
+              <span class="meal-kcal">{{ meal.kcal }}</span>
+            </div>
+          } @empty {
+            <p class="empty">Aún no registras comidas este día.</p>
+          }
+        </section>
+      }
+    }
+  </div>
 </ion-content>
