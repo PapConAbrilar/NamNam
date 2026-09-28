@@ -8,16 +8,13 @@ import { FoodRecognitionResult } from '../models/food-recognition.model';
 export class GeminiService {
   private readonly apiKey = environment.gemini?.apiKey || '';
   
-  // Lista de modelos ordenados por estabilidad y velocidad para evitar errores de alta demanda (503)
-  private readonly modelCandidates = [
-    'gemini-flash-latest',
-    'gemini-3.7-flash',
-    'gemini-3.8-flash',
-  ];
+  // Modelos oficiales con cuota activa en tu proyecto:
+  // gemini-3.1-flash-lite tiene 500 consultas por día y 15 por minuto
+  private readonly primaryModel = 'gemini-3.1-flash-lite';
+  private readonly backupModel = 'gemini-3.6-flash';
 
   /**
    * Analiza una fotografía de comida y retorna la estimación de alimentos, calorías y macros.
-   * Cuenta con reintento automático entre modelos de Google para evitar errores de alta demanda.
    * @param base64Image Imagen en formato Base64 (con o sin prefijo data:image/...)
    * @param mimeType Tipo MIME de la imagen (por defecto 'image/jpeg')
    */
@@ -80,57 +77,66 @@ Reglas estrictas:
       },
     };
 
-    let lastError: any = null;
-
-    // Intentamos con los modelos candidatos en orden de disponibilidad
-    for (const model of this.modelCandidates) {
-      try {
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${this.apiKey}`;
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestBody),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          const message = errorData?.error?.message || `HTTP ${response.status}: ${response.statusText}`;
-
-          // Si el modelo está experimentando alta demanda (503) o cuota temporal (429), probamos con el siguiente
-          if (response.status === 503 || response.status === 429 || response.status === 404 || message.toLowerCase().includes('demand')) {
-            console.warn(`Modelo ${model} saturado temporalmente (${message}). Probando alternativa...`);
-            lastError = new Error(message);
-            continue;
-          }
-
-          throw new Error(`Gemini API Error: ${message}`);
-        }
-
-        const data = await response.json();
-        const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-        if (!rawText) {
-          throw new Error('Gemini no retornó resultados para esta imagen.');
-        }
-
-        // Limpia bloques markdown tipo ```json ... ``` por si el modelo los incluyó
-        let cleanJson = rawText.trim();
-        if (cleanJson.startsWith('```json')) {
-          cleanJson = cleanJson.replace(/^```json\s*/, '').replace(/```\s*$/, '');
-        } else if (cleanJson.startsWith('```')) {
-          cleanJson = cleanJson.replace(/^```\s*/, '').replace(/```\s*$/, '');
-        }
-
-        const parsed: FoodRecognitionResult = JSON.parse(cleanJson);
-        return parsed;
-      } catch (err: any) {
-        lastError = err;
-        console.warn(`Error con modelo ${model}:`, err);
+    try {
+      return await this.callGemini(this.primaryModel, requestBody);
+    } catch (err: any) {
+      // Si el modelo principal está temporalmente ocupado (503), intentamos con el de respaldo
+      if (err?.message?.includes('503') || err?.message?.includes('saturados')) {
+        console.warn(`Modelo ${this.primaryModel} ocupado, probando con ${this.backupModel}...`);
+        return await this.callGemini(this.backupModel, requestBody);
       }
+      throw err;
+    }
+  }
+
+  private async callGemini(model: string, requestBody: any): Promise<FoodRecognitionResult> {
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${this.apiKey}`;
+    
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const rawMessage = errorData?.error?.message || `HTTP ${response.status}: ${response.statusText}`;
+
+      // Manejo claro de límites temporales por minuto (429 / Quota)
+      if (response.status === 429 || rawMessage.toLowerCase().includes('quota') || rawMessage.toLowerCase().includes('rate')) {
+        const retryMatch = rawMessage.match(/retry in ([0-9.]+)s/i);
+        if (retryMatch) {
+          const seconds = Math.ceil(parseFloat(retryMatch[1]));
+          throw new Error(`Límite temporal alcanzado. Por favor espera ${seconds} segundos y vuelve a intentar.`);
+        }
+        throw new Error('Límite de consultas alcanzado. Por favor espera un momento y vuelve a intentar.');
+      }
+
+      if (response.status === 503) {
+        throw new Error('Los servidores de Gemini están saturados temporalmente (503).');
+      }
+
+      throw new Error(`Error de Gemini: ${rawMessage}`);
     }
 
-    throw lastError || new Error('Los servidores de IA están saturados temporalmente. Por favor intenta en unos segundos.');
+    const data = await response.json();
+    const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!rawText) {
+      throw new Error('Gemini no retornó resultados para esta imagen.');
+    }
+
+    // Limpia bloques markdown tipo ```json ... ``` por si el modelo los incluyó
+    let cleanJson = rawText.trim();
+    if (cleanJson.startsWith('```json')) {
+      cleanJson = cleanJson.replace(/^```json\s*/, '').replace(/```\s*$/, '');
+    } else if (cleanJson.startsWith('```')) {
+      cleanJson = cleanJson.replace(/^```\s*/, '').replace(/```\s*$/, '');
+    }
+
+    const parsed: FoodRecognitionResult = JSON.parse(cleanJson);
+    return parsed;
   }
 }

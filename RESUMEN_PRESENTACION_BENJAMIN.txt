@@ -1,0 +1,167 @@
+================================================================================
+GUIA Y RESUMEN PARA PRESENTACION FINAL: ÑAMÑAM
+Integrante: Benjamín Pinto (PapConAbrilar)
+================================================================================
+
+1. TU ROL Y CONTRIBUCION AL PROYECTO (Para asegurar los 12 pts)
+--------------------------------------------------------------------------------
+Fuiste el responsable de los modulos centrales, de seguridad y la funcionalidad 
+estrella de la aplicacion:
+  1. Seguridad y Acceso: Pantalla de Login/Registro, arquitectura de sesion y 
+     Route Guards funcionales (authGuard, onboardingGuard).
+  2. Motor de Onboarding Nutricional: Algoritmo biometrico con la formula 
+     cientifica de Mifflin-St Jeor para calcular el TDEE (gasto energetico diario)
+     y distribucion porcentual de macronutrientes.
+  3. Reconocimiento de Comida con Camara e IA (Tab 3): Captura en tiempo real 
+     con WebRTC/Capacitor, compresion en canvas HTML5 y conexion multimodal con 
+     Google Gemini API (JSON estructurado).
+  4. Dashboard Dinamico y Diseno Mobile-First (Tab 1): Conexión de calorias y 
+     macros en tiempo real, rediseño CSS responsivo en cuadricula para pantallas moviles.
+  5. Reactividad Zoneless: Migracion de componentes a Angular Signals (signal()) 
+     y configuracion de provideZonelessChangeDetection() para renderizado instantaneo.
+
+
+2. DOMINIO Y EXPLICACION DE CODIGO (Para asegurar los 14 pts)
+--------------------------------------------------------------------------------
+
+A. AUTENTICACION Y ROUTE GUARDS
+- Archivos:
+  * src/app/services/auth.service.ts
+  * src/app/guards/auth.guard.ts
+  * src/app/pages/login/login.page.ts
+- Funciones clave a explicar:
+  * login(email, password) / register(...): Gestiona tanto autenticacion local 
+    (localStorage) como en la nube con Supabase (supabase.auth.signInWithPassword).
+  * authGuard (CanActivateFn): Verifica si existe una sesion activa. Si no hay 
+    sesion, redirige a /login. Si hay sesion pero hasCompletedOnboarding es false, 
+    fuerza la redireccion a /onboarding.
+  * waitForSession(): Metodo asincrono dentro del guard que espera a que Supabase 
+    restaure la sesion guardada en el navegador antes de evaluar los permisos de navegacion.
+  * logout(): Limpia el estado reactivo del usuario y destruye la sesion.
+
+B. ONBOARDING Y CALCULO NUTRICIONAL (Mifflin-St Jeor)
+- Archivos:
+  * src/app/pages/onboarding/onboarding.page.ts
+  * src/app/pages/onboarding/onboarding.page.html
+- Funciones clave a explicar:
+  * calculateNutritionGoals(): Aplica la formula cientifica de Mifflin-St Jeor:
+      - Hombre: BMR = (10 * peso_kg) + (6.25 * altura_cm) - (5 * edad) + 5
+      - Mujer:  BMR = (10 * peso_kg) + (6.25 * altura_cm) - (5 * edad) - 161
+    Multiplica el BMR por el factor de actividad fisica (Sedentario: 1.2, 
+    Ligero: 1.375, Moderado: 1.55, Muy activo: 1.725).
+    Ajusta segun objetivo: Perder peso (-400 kcal) o Ganar masa (+350 kcal).
+    Distribuye los macronutrientes: 25% Proteinas (/4 kcal/g), 50% Carbos (/4 kcal/g) 
+    y 25% Grasas (/9 kcal/g).
+
+C. RECONOCIMIENTO FOTOGRAFICO CON GEMINI IA (Tab 3)
+- Archivos:
+  * src/app/tab3/tab3.page.ts
+  * src/app/tab3/tab3.page.html
+  * src/app/services/gemini.service.ts
+- Funciones clave a explicar:
+  * initWebCamera(): Inicia el video en vivo en navegador con navigator.mediaDevices.getUserMedia 
+    y conmuta entre camara trasera ('environment') y frontal ('user'). En movil usa 
+    Capacitor Camera (Camera.getPhoto).
+  * compressImage(dataUrl): Escala y comprime la imagen a maximo 1024x1024 con 
+    calidad 0.82 en un canvas HTML5 para optimizar el envio y evitar saturacion de memoria.
+  * analyzeFoodImage(base64Image) (en GeminiService):
+      - Envia un POST a la API REST de Gemini usando el modelo 'gemini-3.1-flash-lite' 
+        (cuota gratuita activa de 500 peticiones/dia y 15 peticiones/minuto).
+      - Prompt con respuesta estricta en JSON: foods[], kcal, porcion, macronutrientes 
+        y confidence.
+      - Fallback de alta disponibilidad: ante saturacion temporal del servidor (503), 
+        intenta automaticamente con el modelo de respaldo 'gemini-3.6-flash'.
+  * confirmMeal(): Guarda la comida en el diario (DiaryService.recordMeal) y llama 
+    a gachaService.addCurrency(50) (+50 monedas de recompensa).
+  * Reactividad Zoneless con Signals: currentView, previewImage y analysisResult 
+    son signals reactivos (signal()). Se invoca appRef.tick() para cambiar la vista 
+    de 'analyzing' a 'result' al instante sin necesitar interacciones de click.
+
+D. DASHBOARD Y OPTIMIZACION RESPONSIVE (Tab 1)
+- Archivos:
+  * src/app/tab1/tab1.page.ts
+  * src/app/tab1/tab1.page.scss
+- Funciones clave a explicar:
+  * loadTodayData(): Carga el resumen de hoy desde DiaryService y actualiza los 
+    signals reactivos de calorias consumidas, restantes y macros.
+  * Estilos Mobile-First (tab1.page.scss): Organizacion con CSS Grid y Flexbox 
+    para apilar el anillo de calorias y mostrar las estadisticas (Consumidas, 
+    Objetivo, Progreso) en 3 columnas inferiores sin cortes de texto en pantallas pequenas.
+
+
+3. COMPRENSION DEL PROYECTO COMPLETO (Para asegurar los 8 pts)
+--------------------------------------------------------------------------------
+Estructura y conexion entre componentes:
+
+[Usuario] 
+   │
+   ├─► Login / Registro (AuthService -> Supabase Auth / LocalStorage)
+   │      │
+   │      └─► Onboarding (Formula Mifflin-St Jeor calcula calorias y macros)
+   │             │
+   └─────────────┴─► [Tabs (Protegidas por authGuard y onboardingGuard)]
+                       ├── Tab 1: Dashboard (Muestra consumo del dia en tiempo real)
+                       ├── Tab 2: Historial (Agrupa comidas registradas por fecha)
+                       ├── Tab 3: Camara IA (Escaneo con Gemini -> Guarda en BD -> +50 monedas)
+                       ├── Tab 4: Progreso (Graficos de barras semanales y metas)
+                       └── Tab 5: Coleccion & Gacha (Gasta monedas en tiradas de coleccionables)
+
+Interconexion clave del flujo:
+Al confirmar una foto en Tab 3:
+1. Se guarda la comida en DiaryService.
+2. Tab 1 actualiza su anillo calórico en vivo.
+3. Tab 2 agrega la comida al historial de hoy.
+4. GachaService premia al usuario con +50 monedas.
+5. El usuario va a Tab 5 y puede gastar sus monedas en el Gacha.
+
+
+4. PREPARACION PARA EL "CAMBIO EN VIVO" (Para asegurar los 6 pts)
+--------------------------------------------------------------------------------
+Ten localizados estos 4 cambios rapidos:
+
+Cambio 1: Cambiar la recompensa de monedas al registrar comida (De 50 a 100)
+- Archivo: src/app/tab3/tab3.page.ts
+- Metodo: confirmMeal() (alrededor de la linea 330)
+- Codigo:
+    this.gachaService.addCurrency(100); // Cambiar 50 por 100
+- Y en el Toast cambiar el texto: '+100 🪙 de recompensa'
+
+Cambio 2: Modificar el deficit calorico de perder peso
+- Archivo: src/app/pages/onboarding/onboarding.page.ts
+- Metodo: calculateNutritionGoals() (alrededor de la linea 135)
+- Codigo:
+    if (this.goal === 'lose_weight') {
+      targetKcal -= 500; // Cambiar -400 por -500
+    }
+
+Cambio 3: Cambiar el modelo de Gemini IA
+- Archivo: src/app/services/gemini.service.ts
+- Linea 13:
+    private readonly primaryModel = 'gemini-3.6-flash'; // Cambiar modelo
+
+Cambio 4: Cambiar color o texto del boton de confirmar comida
+- Archivo: src/app/tab3/tab3.page.html (alrededor de la linea 210)
+- Codigo: Cambiar color="primary" a color="success" o el texto del boton.
+
+
+5. PREGUNTAS TECNICAS TIPICAS Y COMO RESPONDERLAS
+--------------------------------------------------------------------------------
+
+Pregunta: ¿Por que usaron Angular Signals y provideZonelessChangeDetection()?
+Respuesta: "Porque Angular moderno permite prescindir de Zone.js. Con zoneless y 
+Signals (signal()), el framework detecta exactamente que dato cambio en memoria 
+y actualiza el DOM de forma inmediata sin sobrecarga de sondeo (polling), lo que 
+es ideal para respuestas asincronas como las llamadas fetch a la IA de Gemini."
+
+Pregunta: ¿Como aseguraron que no se rompa el acceso de usuarios no registrados?
+Respuesta: "Mediante los Route Guards funcionales authGuard y onboardingGuard en 
+app.routes.ts y tabs.routes.ts. El guard evalua la sesion activa; si no hay sesion 
+redirige al login, y si la sesion existe pero no ha completado el onboarding, no 
+lo deja entrar a las tabs y lo envia a completar su perfil nutricional."
+
+Pregunta: ¿Que pasa si la API de Gemini falla o demora?
+Respuesta: "Implementamos manejo de errores con bloques try/catch y alertas claras 
+en espanol para el usuario (si se alcanza la cuota o falla la red). Ademas, 
+GeminiService cuenta con un mecanismo de respaldo (fallback) que conmuta de forma 
+transparente al modelo gemini-3.6-flash si el modelo principal responde con saturacion 503."
+================================================================================

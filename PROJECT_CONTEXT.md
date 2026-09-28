@@ -292,7 +292,7 @@ Para mantener el orden, la trazabilidad del código y evitar conflictos entre lo
   * **Integración en Tab 3:** inyección de `GachaService` en `src/app/tab3/tab3.page.ts` y llamada a `addCurrency(50)` en `confirmMeal()`.
 
 #### 9. Route Guards de Autenticación, Conexión Dinámica de Tab 1 e Integración Completa con Supabase
-* **Estado:** 🟡 En Revisión
+* **Estado:** 🟢 Completada (Validada por Benjamín Pinto - PR #8)
 * **Fecha:** 2026-09-27
 * **Autor / Responsable:** Antigravity AI & Benjamín Pinto
 * **¿Qué hace?**:
@@ -315,6 +315,23 @@ Para mantener el orden, la trazabilidad del código y evitar conflictos entre lo
     * `src/app/services/data/mock-collection.repository.ts` (catálogo sincronizado con los 19 ítems).
   * **Vistas:** `src/app/tab1/tab1.page.ts`, `tab1.page.html`.
   * **Base de Datos:** `supabase/schema.sql` con definición de tablas `profiles`, `nutrition_goals`, `meals`, `activities`, `collectibles` (con los 19 ítems del catálogo), `user_collectibles`, `user_gacha_inventory`, `reward_claims`, políticas RLS y función `open_weekly_reward`.
+
+#### 10. Optimización Responsive de Tab 1, Consulta a Gemini API y Reactividad Zoneless en Tab 3
+* **Estado:** 🟡 En Revisión
+* **Fecha:** 2026-09-28
+* **Autor / Responsable:** Antigravity AI & Benjamín Pinto
+* **¿Qué hace?**:
+  * **Ajuste Responsive de la Tab Inicio (Tab 1):** Reorganiza el resumen calórico para pantallas móviles (Mobile First) apilando el anillo calórico centrado y disponiendo las 3 métricas ("Consumidas", "Objetivo", "Progreso") en una cuadrícula inferior de ancho completo con bordes sutiles. Elimina el desbordamiento de números grandes y etiquetas cortadas.
+  * **Ajuste de Macronutrientes y Comidas:** Corrige el espaciado y anchos mínimos de las filas de macronutrientes para evitar quiebres de línea en valores como `150g / 250g` y mejora el contraste de colores en modo oscuro.
+  * **Optimización de GeminiService:** Elimina el bucle de reintento que multiplicaba peticiones y consumía la cuota diaria. Configura como modelo principal **`gemini-3.1-flash-lite`** (con cuota gratuita activa de **500 peticiones/día y 15 RPM**) y respaldo automático en **`gemini-3.6-flash`** ante saturación temporal (503).
+  * **Corrección de Reactividad y Descongelamiento en Tab 3:** Corrige el problema donde la pantalla se quedaba congelada en "Analizando tu comida..." tras la llamada asíncrona a Gemini. Se implementa reactividad nativa mediante Signals de Angular y se configura el Change Detection Zoneless en `main.ts`, logrando que la transición a la vista de resultados ("Resultado IA 🤖") ocurra de forma instantánea y automática apenas el modelo responde, sin requerir cambiar de pestaña ni interacción adicional.
+* **¿Cómo lo hace?**:
+  * **Configuración Angular:** `src/main.ts` (añade `provideZonelessChangeDetection()` para el correcto procesamiento de eventos asíncronos en arquitecturas sin Zone.js).
+  * **Vistas y Componentes:** 
+    * `src/app/tab1/tab1.page.scss` (reestructuración flex/grid responsive con breakpoints `@media (min-width: 480px)` y `@media (max-width: 360px)`).
+    * `src/app/tab3/tab3.page.ts` (migración del estado a `signal()`: `currentView`, `previewImage`, `analysisResult`, `selectedMealType`, `isProcessing`, `isCameraStreaming`, `cameraError`, e invocación directa de `appRef.tick()`).
+    * `src/app/tab3/tab3.page.html` (consumo de signals reactivos con control flow `@if`, actualización de etiquetas visuales a "Gemini 3.1 Flash Lite" y enlace con `onMealTypeChange`).
+  * **Servicios:** `src/app/services/gemini.service.ts` (llamada a `gemini-3.1-flash-lite` con fallback a `gemini-3.6-flash` y formateo de errores de cuota en español).
 
 
 

@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, inject, ChangeDetectorRef, NgZone } from '@angular/core';
+import { Component, ElementRef, ViewChild, inject, ChangeDetectorRef, ApplicationRef, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -75,19 +75,19 @@ export class Tab3Page {
   private alertCtrl = inject(AlertController);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
-  private ngZone = inject(NgZone);
+  private appRef = inject(ApplicationRef);
 
-  currentView: 'capture' | 'analyzing' | 'result' = 'capture';
-  previewImage: string | null = null;
-  analysisResult: FoodRecognitionResult | null = null;
-  selectedMealType: MealType = 'lunch';
-  isProcessing = false;
+  currentView = signal<'capture' | 'analyzing' | 'result'>('capture');
+  previewImage = signal<string | null>(null);
+  analysisResult = signal<FoodRecognitionResult | null>(null);
+  selectedMealType = signal<MealType>('lunch');
+  isProcessing = signal(false);
 
   // Manejo de cámara en vivo (web y móvil)
   mediaStream: MediaStream | null = null;
-  isCameraStreaming = false;
+  isCameraStreaming = signal(false);
   cameraFacingMode: 'environment' | 'user' = 'environment';
-  cameraError: string | null = null;
+  cameraError = signal<string | null>(null);
 
   constructor() {
     addIcons({
@@ -101,11 +101,11 @@ export class Tab3Page {
       arrowBack,
       syncOutline,
     });
-    this.selectedMealType = this.guessMealType();
+    this.selectedMealType.set(this.guessMealType());
   }
 
   ionViewDidEnter() {
-    if (this.currentView === 'capture' && !Capacitor.isNativePlatform()) {
+    if (this.currentView() === 'capture' && !Capacitor.isNativePlatform()) {
       this.initWebCamera();
     }
   }
@@ -117,10 +117,10 @@ export class Tab3Page {
   /** Inicia el stream de video de la cámara real en el navegador */
   async initWebCamera() {
     this.stopWebCamera();
-    this.cameraError = null;
+    this.cameraError.set(null);
 
     if (!navigator?.mediaDevices?.getUserMedia) {
-      this.cameraError = 'La cámara no es soportada en este navegador.';
+      this.cameraError.set('La cámara no es soportada en este navegador.');
       return;
     }
 
@@ -139,22 +139,18 @@ export class Tab3Page {
 
       // Espera el tick para asegurar que el elemento <video> esté en el DOM
       setTimeout(() => {
-        this.ngZone.run(() => {
-          if (this.videoElementRef?.nativeElement) {
-            this.videoElementRef.nativeElement.srcObject = stream;
-            this.videoElementRef.nativeElement.play().catch(() => {});
-            this.isCameraStreaming = true;
-            this.cdr.detectChanges();
-          }
-        });
+        if (this.videoElementRef?.nativeElement) {
+          this.videoElementRef.nativeElement.srcObject = stream;
+          this.videoElementRef.nativeElement.play().catch(() => {});
+          this.isCameraStreaming.set(true);
+          this.cdr.markForCheck();
+        }
       }, 50);
     } catch (err: any) {
       console.warn('Error accediendo a la cámara web en vivo:', err);
-      this.ngZone.run(() => {
-        this.isCameraStreaming = false;
-        this.cameraError = 'Permite el acceso a la cámara o sube una imagen de tu plato.';
-        this.cdr.detectChanges();
-      });
+      this.isCameraStreaming.set(false);
+      this.cameraError.set('Permite el acceso a la cámara o sube una imagen de tu plato.');
+      this.cdr.markForCheck();
     }
   }
 
@@ -164,7 +160,7 @@ export class Tab3Page {
       this.mediaStream.getTracks().forEach((track) => track.stop());
       this.mediaStream = null;
     }
-    this.isCameraStreaming = false;
+    this.isCameraStreaming.set(false);
   }
 
   /** Alterna entre cámara trasera y delantera */
@@ -197,7 +193,7 @@ export class Tab3Page {
     }
 
     // Si está en el navegador web con la cámara en vivo activa:
-    if (this.isCameraStreaming && this.videoElementRef?.nativeElement) {
+    if (this.isCameraStreaming() && this.videoElementRef?.nativeElement) {
       const video = this.videoElementRef.nativeElement;
       const canvas = document.createElement('canvas');
       canvas.width = video.videoWidth || 640;
@@ -256,10 +252,8 @@ export class Tab3Page {
     const reader = new FileReader();
     reader.onload = () => {
       const dataUrl = reader.result as string;
-      this.ngZone.run(() => {
-        this.stopWebCamera();
-        this.handleImageCaptured(dataUrl);
-      });
+      this.stopWebCamera();
+      this.handleImageCaptured(dataUrl);
     };
     reader.readAsDataURL(file);
     input.value = '';
@@ -267,60 +261,65 @@ export class Tab3Page {
 
   /** Procesa la imagen capturada y la envía a Gemini */
   private async handleImageCaptured(dataUrl: string) {
-    this.ngZone.run(() => {
-      this.currentView = 'analyzing';
-      this.isProcessing = true;
-      this.cdr.detectChanges();
-    });
+    this.previewImage.set(dataUrl);
+    this.currentView.set('analyzing');
+    this.isProcessing.set(true);
+    this.cdr.markForCheck();
+    this.appRef.tick();
 
     try {
       // Comprime la imagen para reducir latencia y evitar exceder límites de payload
       const compressed = await this.compressImage(dataUrl);
-      this.previewImage = compressed;
+      this.previewImage.set(compressed);
+      this.cdr.markForCheck();
 
       const result = await this.geminiService.analyzeFoodImage(compressed);
 
-      this.ngZone.run(() => {
-        this.analysisResult = result;
-        this.selectedMealType = this.guessMealType();
-        this.currentView = 'result';
-        this.isProcessing = false;
-        this.cdr.detectChanges();
-      });
+      this.analysisResult.set(result);
+      this.selectedMealType.set(this.guessMealType());
+      this.currentView.set('result');
+      this.isProcessing.set(false);
+      this.cdr.markForCheck();
+      this.appRef.tick();
     } catch (error: any) {
       console.error('Error al analizar la imagen con Gemini:', error);
-      this.ngZone.run(async () => {
-        this.isProcessing = false;
-        this.cdr.detectChanges();
-        await this.showAnalysisError(error?.message);
-        this.resetCapture();
-      });
+      this.isProcessing.set(false);
+      this.cdr.markForCheck();
+      this.appRef.tick();
+      await this.showAnalysisError(error?.message);
+      this.resetCapture();
     } finally {
-      this.ngZone.run(() => {
-        this.isProcessing = false;
-        this.cdr.detectChanges();
-      });
+      this.isProcessing.set(false);
+      this.cdr.markForCheck();
+    }
+  }
+
+  onMealTypeChange(event: any) {
+    const val = event?.detail?.value;
+    if (val) {
+      this.selectedMealType.set(val as MealType);
     }
   }
 
   /** Confirma y registra la comida en el diario */
   async confirmMeal() {
-    if (!this.analysisResult) return;
-    this.isProcessing = true;
-    this.cdr.detectChanges();
+    const result = this.analysisResult();
+    if (!result) return;
+    this.isProcessing.set(true);
+    this.cdr.markForCheck();
 
     try {
       const now = new Date();
       await this.diaryService.recordMeal({
-        name: this.analysisResult.mealName || 'Comida',
-        mealType: this.selectedMealType,
+        name: result.mealName || 'Comida',
+        mealType: this.selectedMealType(),
         consumedAt: now.toISOString(),
         logDate: toISODate(now),
-        kcal: this.analysisResult.totalKcal,
-        proteinG: this.analysisResult.proteinGrams,
-        carbsG: this.analysisResult.carbsGrams,
-        fatG: this.analysisResult.fatGrams,
-        photoPath: this.previewImage,
+        kcal: result.totalKcal,
+        proteinG: result.proteinGrams,
+        carbsG: result.carbsGrams,
+        fatG: result.fatGrams,
+        photoPath: this.previewImage(),
       });
 
       // Recompensa al usuario con monedas de Gacha por registrar su comida
@@ -346,32 +345,34 @@ export class Tab3Page {
       });
       await toast.present();
     } finally {
-      this.isProcessing = false;
-      this.cdr.detectChanges();
+      this.isProcessing.set(false);
+      this.cdr.markForCheck();
     }
   }
 
   /** Permite eliminar un alimento detectado de la lista */
   removeFoodItem(index: number) {
-    if (!this.analysisResult || !this.analysisResult.foods) return;
-    const removed = this.analysisResult.foods.splice(index, 1)[0];
+    const result = this.analysisResult();
+    if (!result || !result.foods) return;
+    const removed = result.foods.splice(index, 1)[0];
     if (removed) {
-      this.analysisResult.totalKcal = Math.max(0, this.analysisResult.totalKcal - removed.kcal);
-      this.cdr.detectChanges();
+      result.totalKcal = Math.max(0, result.totalKcal - removed.kcal);
+      this.analysisResult.set({ ...result });
+      this.cdr.markForCheck();
+      this.appRef.tick();
     }
   }
 
   resetCapture() {
-    this.ngZone.run(() => {
-      this.currentView = 'capture';
-      this.previewImage = null;
-      this.analysisResult = null;
-      this.isProcessing = false;
-      if (!Capacitor.isNativePlatform()) {
-        this.initWebCamera();
-      }
-      this.cdr.detectChanges();
-    });
+    this.currentView.set('capture');
+    this.previewImage.set(null);
+    this.analysisResult.set(null);
+    this.isProcessing.set(false);
+    if (!Capacitor.isNativePlatform()) {
+      this.initWebCamera();
+    }
+    this.cdr.markForCheck();
+    this.appRef.tick();
   }
 
   private guessMealType(): MealType {
